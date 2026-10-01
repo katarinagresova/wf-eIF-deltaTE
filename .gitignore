@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments
+.env
+.venv/
+env/
+venv/
+.conda/
+
+# Snakemake
+.snakemake/
+logs/
+
+# Project outputs
+results/
+validation/
+resources/
+
+# agents
+CLAUDE.md
+PLAN.md
+FINDINGS.md
