@@ -1,0 +1,19 @@
+# The eIF depletion experiments in config/samples.csv, aligned by
+# wf-riboseq-align, imported once for all of them (rules/align.smk).
+
+configfile: "config/config.yaml"
+
+RESULTS_DIR = config.get("RESULTS_DIR", "results")
+LOG_DIR = config.get("LOG_DIR", "logs")
+
+
+include: "rules/align.smk"
+
+
+rule all:
+    default_target: True
+    input:
+        # everything wf-riboseq-align's own `rule all` builds, for every
+        # experiment: incl. qc/summary.tsv, whose rule fails an experiment
+        # whose spike-in fraction is below min_spike_in_fraction
+        rules.align_all.input,

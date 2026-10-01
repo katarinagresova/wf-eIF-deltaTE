@@ -19,6 +19,9 @@ venv/
 .snakemake/
 logs/
 
+# Machine-specific paths (config/local/config.yaml, see README.md)
+config/local/
+
 # Project outputs
 results/
 validation/

@@ -1,0 +1,58 @@
+# SLURM execution profile: one SLURM job per rule instance.
+# Requires snakemake-executor-plugin-slurm in the `snake` env.
+# Everything here is CPU-only -- no GPU partition.
+
+executor: slurm
+use-conda: true
+jobs: 40
+printshellcmds: true
+rerun-incomplete: true
+keep-going: true
+latency-wait: 60
+
+# Profile resource values are evaluated as Python, so strings must be
+# inner-quoted ("'normal'"), otherwise they silently resolve to <TBD>.
+# No slurm_account: the SLURM plugin guesses it, else sbatch uses your default
+# account; set one here if your cluster needs it.
+default-resources:
+  slurm_partition: "'normal'"
+  runtime: 240  # as wf-riboseq-align's profile
+  mem_mb: 8000
+  cpus_per_task: 1
+
+# align.smk imports wf-riboseq-align once, as align_<rulename>, and
+# set-resources matches rule names exactly. Values copied from
+# wf-riboseq-align/workflow/profiles/slurm/config.yaml. Without them,
+# default-resources' cpus_per_task: 1 would override the rules' own
+# threads: 8/12.
+set-resources:
+  align_cutadapt_reads:
+    cpus_per_task: 4
+  # holds every distinct read in memory
+  align_collapse_reads:
+    mem_mb: 16000
+  align_star_contaminant_index:
+    cpus_per_task: 8
+  align_star_contaminant:
+    cpus_per_task: 8
+    mem_mb: 16000
+  align_contaminant_compete_align:
+    cpus_per_task: 8
+    mem_mb: 24000
+  align_contaminant_compete:
+    mem_mb: 16000
+  align_star_transcript_index_rnaseq:
+    cpus_per_task: 8
+    mem_mb: 16000
+  align_star_transcript_rnaseq:
+    cpus_per_task: 8
+    mem_mb: 16000
+  align_star_transcript_index:
+    cpus_per_task: 8
+    mem_mb: 16000
+  align_star_transcript:
+    cpus_per_task: 12
+    mem_mb: 24000
+  align_salmon_bam:
+    cpus_per_task: 4
+    mem_mb: 16000

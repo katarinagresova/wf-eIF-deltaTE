@@ -1,0 +1,7 @@
+# Local execution profile (single machine / interactive node). CPU-only:
+# nothing in this repo needs a GPU.
+cores: 8
+use-conda: true
+printshellcmds: true
+rerun-incomplete: true
+keep-going: true
