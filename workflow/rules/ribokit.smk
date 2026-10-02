@@ -12,6 +12,9 @@
 #                                    (yeast: the human ones it used)
 #   <sample>.<species>.ties.tsv      transcripts with identical CDSs, grouped
 #   <sample>.<species>.stats.tsv     annotation, read and fit counts
+#   <sample>.<species>.psites.tsv    read, Name (CDS), psite (0-based transcript position of the
+#                                    P-site's first nt), length -- one row per alignment assigned
+#                                    to a CDS
 # Later steps read the quants (RIBOKIT_QUANT). ribokit fails by itself if its
 # fit does not converge.
 
@@ -42,6 +45,7 @@ rule ribokit_human_morfs:
         offsets=f"{RIBOKIT_OUT}.human.offsets.tsv",
         ties=f"{RIBOKIT_OUT}.human.ties.tsv",
         stats=f"{RIBOKIT_OUT}.human.stats.tsv",
+        psites=f"{RIBOKIT_OUT}.human.psites.tsv",
     wildcard_constraints:
         **RIBOKIT_CONSTRAINTS,
     params:
@@ -66,6 +70,7 @@ rule ribokit_yeast_morfs:
         offsets=f"{RIBOKIT_OUT}.yeast.offsets.tsv",
         ties=f"{RIBOKIT_OUT}.yeast.ties.tsv",
         stats=f"{RIBOKIT_OUT}.yeast.stats.tsv",
+        psites=f"{RIBOKIT_OUT}.yeast.psites.tsv",
     wildcard_constraints:
         **RIBOKIT_CONSTRAINTS,
     params:

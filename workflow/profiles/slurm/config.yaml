@@ -56,3 +56,9 @@ set-resources:
   align_salmon_bam:
     cpus_per_task: 4
     mem_mb: 16000
+  # wf-riboseq-align 7ac127c on (salmon on the fastq, genome decoys; no RNA-seq
+  # STAR, no salmon_bam): the rules' threads, their mem_mb is in the rules
+  align_salmon_index:
+    cpus_per_task: 16
+  align_salmon_quant:
+    cpus_per_task: 8

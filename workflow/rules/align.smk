@@ -14,6 +14,8 @@ ALIGN_SNAKEFILE = config.get("align_snakefile") or github(
 
 ALIGN_CONFIG = {
     **config["align"],
+    # the RNA-seq salmon index's decoys (wf-riboseq-align 7ac127c on); the same genome as ribokit's
+    "human_genome_fa": config["references"]["human_genome_fa"],
     "samples": config["samples"],
     "RESULTS_DIR": f"{RESULTS_DIR}/align",
     "LOG_DIR": f"{LOG_DIR}/align",

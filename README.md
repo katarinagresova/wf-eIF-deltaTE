@@ -40,7 +40,8 @@ the reads on the human transcripts and counts the reads per CDS, human and spike
 human offsets). Only reads of config `read_lengths` count, the same window in every library.
 Reads compatible with several CDSs are split by an EM that starts deterministically and fails if
 it does not converge. `results/ribokit/<experiment>/` holds
-`<sample>.{human,yeast}.{quant,offsets,ties,stats}.tsv`. ribokit is installed from GitHub at the
+`<sample>.{human,yeast}.{quant,offsets,ties,stats,psites}.tsv` (`psites.tsv`: one row per
+alignment assigned to a CDS, its P-site position). ribokit is installed from GitHub at the
 commit pinned in `workflow/envs/ribokit.yaml`.
 
 ## deltaTE: DESeq2
