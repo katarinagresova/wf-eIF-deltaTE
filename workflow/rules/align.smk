@@ -8,7 +8,7 @@
 # wf-riboseq-align at a pinned commit, fetched from GitHub; config
 # `align_snakefile` (a local checkout's workflow/Snakefile) replaces it.
 ALIGN_SNAKEFILE = config.get("align_snakefile") or github(
-    "katarinagresova/wf-riboseq-align", path="workflow/Snakefile", commit="7d108a52ec2285821ca5008e50186f55b093774e"
+    "katarinagresova/wf-riboseq-align", path="workflow/Snakefile", commit="56342d9932b123a49ee2f49f01f21b07352e7ff8"
 )
 
 

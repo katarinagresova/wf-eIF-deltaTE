@@ -45,6 +45,19 @@ align:
 # removed only if it aligns at least as well to a contaminant as to the
 # transcriptome, sense strand; a tie stays removed (contaminant_compete).
 
+# Ribo-seq quantification (workflow/rules/ribokit.smk): the genome fasta of
+# the human transcriptome GTF (ribokit reads the RNA-seq-filtered GTF align.smk
+# builds per experiment), and the spike-in (yeast) genome fasta and GTF.
+references:
+  human_genome_fa: "/path/to/human_genome.fa"
+  yeast_genome_fa: "/path/to/yeast_genome.fa"
+  yeast_gtf: "/path/to/yeast.gtf"
+
+# Ribo-seq read lengths counted, [lo, hi] nt, the same window in every library:
+# a window chosen per library can drop a length class at its edge in some
+# libraries only, and the spike-in size factors move with it.
+read_lengths: [18, 30]
+
 # RNA-seq library correction (workflow/rules/rna_correction.smk). Within each
 # condition, each library's log2 CPM deviation from the mean of its replicates
 # is fitted as a smooth function of transcript length and GC (median

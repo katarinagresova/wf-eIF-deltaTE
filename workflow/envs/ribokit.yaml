@@ -1,0 +1,16 @@
+# ribokit (https://github.com/katarinagresova/ribokit) at a pinned commit, with
+# the dependency versions that commit's environment.yml pins. To update it,
+# change the commit in the URL and copy the pins from its environment.yml.
+name: ribokit
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.14.7
+  - numpy=2.4.6
+  - scipy=1.17.1
+  - pandas=3.0.6
+  - pysam=0.24.1
+  - pip=26.2.1
+  - pip:
+      - ribokit @ https://github.com/katarinagresova/ribokit/archive/bfbd04d294568bc6c260c5ee8a2d778e54135ffe.tar.gz

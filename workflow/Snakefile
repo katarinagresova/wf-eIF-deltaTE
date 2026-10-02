@@ -1,6 +1,7 @@
 # The eIF depletion experiments in config/samples.csv, aligned by
 # wf-riboseq-align, imported once for all of them (rules/align.smk), with the
-# RNA-seq library correction (rules/rna_correction.smk).
+# RNA-seq library correction (rules/rna_correction.smk) and the Ribo-seq
+# quantification (rules/ribokit.smk).
 
 import os
 
@@ -33,6 +34,7 @@ ALIGN_DIR = f"{RESULTS_DIR}/align/{{exp}}"
 
 include: "rules/align.smk"
 include: "rules/rna_correction.smk"
+include: "rules/ribokit.smk"
 
 
 rule all:
@@ -46,3 +48,6 @@ rule all:
          if os.path.relpath(f, f"{RESULTS_DIR}/align").split("/")[0] in EXPERIMENT_NAMES],
         # the corrected RNA-seq quantifications + what the correction did
         [f"{RNA_CORRECTION_DIR}/{exp}/factors.tsv" for exp in EXPERIMENT_NAMES],
+        # the Ribo-seq quantifications
+        [f"{RIBOKIT_DIR}/{exp}/{s}.{species}.quant.tsv"
+         for exp in EXPERIMENT_NAMES for s in samples_of(exp, "ribo") for species in ("human", "yeast")],
