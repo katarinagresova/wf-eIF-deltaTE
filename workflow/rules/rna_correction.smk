@@ -1,6 +1,6 @@
 # The RNA-seq library correction (config rna_correction:), per experiment: a
 # library whose counts lean with transcript length and GC against its
-# replicates is corrected (scripts/rna_correction.R says how). Input: align.smk's
+# replicates is corrected (scripts/rna_correction.py says how). Input: align.smk's
 # salmon/<sample>/quant.rnaseq_filtered.sf (salmon's quant.sf without the
 # transcripts the RNA-seq filter removed). In results/rna_correction/<exp>/:
 #   <sample>_quant.sf   the corrected libraries rewritten, every other file copied
@@ -41,7 +41,7 @@ for _exp in EXPERIMENT_NAMES:
         input:
             quant=[f"{ALIGN_DIR.format(exp=_exp)}/salmon/{s}/quant.rnaseq_filtered.sf" for s in _rna],
             features=RNA_CORRECTION_FEATURES,
-            script=workflow.source_path("../scripts/rna_correction.R"),
+            script=workflow.source_path("../scripts/rna_correction.py"),
         output:
             quant=[f"{_dir}/{s}_quant.sf" for s in _rna],
             scan=f"{_dir}/scan.tsv",
@@ -55,5 +55,5 @@ for _exp in EXPERIMENT_NAMES:
         conda:
             "../envs/rna_correction.yaml"
         shell:
-            "Rscript {input.script} {input.features} {params.settings} {output.scan} {output.factors} {params.n} "
+            "python {input.script} {input.features} {params.settings} {output.scan} {output.factors} {params.n} "
             "{input.quant} {output.quant} {params.conditions} > {log} 2>&1"
