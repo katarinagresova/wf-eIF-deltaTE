@@ -89,7 +89,6 @@ replicate, and the transcript annotation from the GTF. The experiments are stack
   ```yaml
   samples: "config/local/samples.csv"
   align:
-    contaminants_fa: "/data/contaminants.fa"
     human_transcriptome_fa: "/data/human_transcriptome.fa"
     human_transcriptome_gtf: "/data/human_transcriptome.gtf"
     spike_in_transcriptome_fa: "/data/yeast_transcriptome.fa"
@@ -98,8 +97,9 @@ replicate, and the transcript annotation from the GTF. The experiments are stack
     yeast_genome_fa: "/data/yeast_genome.fa"
     yeast_gtf: "/data/yeast.gtf"
   ```
-- The contaminant set (`align: contaminants_fa`) is not built by the run. wf-riboseq-align ships
-  one, `resources/contaminants_built.fa`; to rebuild it from public sources, run its
+- The contaminant set is not built by the run: it is the one wf-riboseq-align ships,
+  `resources/contaminants_built.fa`, fetched from GitHub at the pinned commit.
+  `align: contaminants_fa: <fasta>` replaces it; to rebuild it from public sources, run its
   `build_contaminants` rule (needs internet access), e.g.
   `./snakemake.sh results/align/reference/contaminants_built.fa`.
 - `align_snakefile: <checkout>/workflow/Snakefile` imports a local wf-riboseq-align checkout

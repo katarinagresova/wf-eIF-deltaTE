@@ -34,7 +34,6 @@ align:
   minlength: 18
   maxlength: 100
   qualcutoff: 20
-  contaminants_fa: "/path/to/contaminants.fa"
   human_transcriptome_fa: "/path/to/human_transcriptome.fa"
   human_transcriptome_gtf: "/path/to/human_transcriptome.gtf"
   spike_in_transcriptome_fa: "/path/to/yeast_transcriptome.fa"
@@ -43,9 +42,10 @@ align:
     min_tpm: 0.01
     min_samples: 2
 
-# align: contaminants_fa, the Ribo-seq contaminant set. Not built by this
-# workflow: wf-riboseq-align ships one (resources/contaminants_built.fa), made
-# by its build_contaminants rule (needs internet access; see README.md):
+# The Ribo-seq contaminant set: by default the one wf-riboseq-align ships
+# (resources/contaminants_built.fa), fetched from GitHub at the commit
+# align.smk pins; `align: contaminants_fa: <fasta>` replaces it. Made by its
+# build_contaminants rule (needs internet access; see README.md):
 # Ensembl 109 human + yeast ncRNA except lncRNA, GtRNAdb hg38 tRNAs, 4 RefSeq
 # rRNAs, and 14 index/marker sequences. wf-riboseq-align filters
 # competitively against it: a read is
