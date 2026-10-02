@@ -1,7 +1,8 @@
 # The eIF depletion experiments in config/samples.csv, aligned by
 # wf-riboseq-align, imported once for all of them (rules/align.smk), with the
 # RNA-seq library correction (rules/rna_correction.smk), the Ribo-seq
-# quantification (rules/ribokit.smk) and the deltaTE model (rules/deltate.smk).
+# quantification (rules/ribokit.smk), the deltaTE model (rules/deltate.smk)
+# and the master table (rules/master.smk).
 
 import os
 
@@ -36,6 +37,7 @@ include: "rules/align.smk"
 include: "rules/rna_correction.smk"
 include: "rules/ribokit.smk"
 include: "rules/deltate.smk"
+include: "rules/master.smk"
 
 
 rule all:
@@ -57,3 +59,5 @@ rule all:
          for exp in EXPERIMENT_NAMES
          for kind in ("deltaTE_yeastnorm", "deltaTE_autonorm", "diffribo_yeastnorm", "diffribo_autonorm",
                       "difftotal_autonorm")],
+        # the master table
+        f"{RESULTS_DIR}/master/eif-master.csv",
