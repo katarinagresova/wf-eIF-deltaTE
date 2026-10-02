@@ -12,6 +12,13 @@ LOG_DIR: "logs"
 # timepoint, using the samples in config/samples.csv that match that timepoint.
 timepoints: [4h]
 
+# The two conditions compared (samples.csv `condition`): every experiment needs
+# both, and no other, in its Ribo-seq and its RNA-seq libraries. Fold changes
+# are treatment over reference.
+conditions:
+  reference: minusAux
+  treatment: plusAux
+
 # wf-riboseq-align, imported once for all experiments (see
 # workflow/rules/align.smk) from GitHub at the commit pinned there. To import a
 # local checkout instead:

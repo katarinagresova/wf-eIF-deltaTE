@@ -1,7 +1,7 @@
 # The Ribo-seq size factors from the spike-in (workflow/rules/deltate.smk): each library's spike-in (yeast) CDS reads
 # over the first library's, so the order of the libraries matters.
 # Rscript calc_sizefactors.R <dir> <n> <ribo sample 1..n> <yeast quant 1..n>
-#   ribo sample i  library i's sample id, ending in "_R1" (dropped in the size factors' names)
+#   ribo sample i  library i's sample id (the size factors' names)
 #   yeast quant i  library i's reads per spike-in CDS (columns Name, NumReads)
 # Writes <dir>/sizeFactors_yeast_ribo.rds.
 library(tidyverse)
@@ -29,7 +29,5 @@ print(dim(ribo_readcounts_df))
 # Calculate column-wise (=sample-wise) sums and divide sum of reads for each sample by sum or reads in first sample
 sumReads <- colSums(ribo_readcounts_df[,-1], na.rm = TRUE)
 sizeFactors <- sumReads/sumReads[1]
-names(sizeFactors) <- str_sub(names(sizeFactors), 1, -4)
-print("after removing _R1 from end of sample name strings: ")
 print(sizeFactors)
 saveRDS(sizeFactors, file.path(out_dir, "sizeFactors_yeast_ribo.rds"))

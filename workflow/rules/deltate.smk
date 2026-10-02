@@ -1,9 +1,11 @@
 # The deltaTE model (Chotani et al. 2019), per experiment: DESeq2 on its
 # Ribo-seq and RNA-seq libraries together, the change in translational
-# efficiency being the interaction of auxin (minusAux -> plusAux) and assay
-# (RNA-seq -> Ribo-seq). Inputs: ribokit.smk's quants (RIBOKIT_QUANT: human
-# for the model, yeast for the spike-in size factors) and rna_correction.smk's
-# (RNA_CORRECTION_QUANT). The scripts read and write results/deltaTE/<exp>/:
+# efficiency being the interaction of condition (config conditions: reference
+# -> treatment) and assay (RNA-seq -> Ribo-seq). Inputs: ribokit.smk's quants
+# (RIBOKIT_QUANT: human for the model, yeast for the spike-in size factors) and
+# rna_correction.smk's (RNA_CORRECTION_QUANT). Each library's assay and
+# condition come from samples.csv. The scripts read and write
+# results/deltaTE/<exp>/:
 #   sizeFactors_yeast_ribo.rds       calc_sizefactors.R: Ribo-seq size factors
 #                                    from the spike-in
 #   sampleTable.*, txi*              import_txAbundance.R: the libraries in one
@@ -16,44 +18,20 @@
 
 import re
 
+# [reference, treatment]
+DELTATE_CONDITIONS = [config["conditions"]["reference"], config["conditions"]["treatment"]]
+
 
 def _check_samples(samples):
-    """The deltaTE scripts read each sample's assay, condition and replicate from
-    its name, split on "_" (a Ribo-seq name ends in "_R1", which they drop), and
-    their DESeq2 design expects the conditions minusAux / plusAux and the suffix
-    minusHarr. So each sample_id must spell out its columns,
-    <assay>_<id>_<target>_<condition>_minusHarr_<timepoint>_rep<rep> (+ "_R1"
-    for Ribo-seq; assay ribo or total); Ribo-seq is single-end and RNA-seq
-    paired-end, experiment is <target>_<timepoint>, and every experiment has
-    both conditions for both assays."""
+    """Every experiment run has exactly the two conditions in both assays. The
+    scripts take each library's assay and condition from samples.csv, never
+    from its name (wf-riboseq-align checks read_type and sample_id)."""
     errors = []
-    if samples["sample_id"].duplicated().any():
-        errors.append(f"duplicate sample_id: {sorted(samples.loc[samples['sample_id'].duplicated(), 'sample_id'])}")
-    for r in samples.itertuples():
-        assay = {"ribo": "ribo", "rna": "total"}.get(r.read_type)
-        f = r.sample_id.split("_")
-        n = 8 if r.read_type == "ribo" else 7
-        if assay is None:
-            errors.append(f"{r.sample_id}: read_type must be ribo or rna, got {r.read_type!r}")
-            continue
-        if len(f) != n or (r.read_type == "ribo" and f[7] != "R1"):
-            errors.append(f"{r.sample_id}: expected {n} '_'-separated fields"
-                          + (" ending in _R1" if r.read_type == "ribo" else ""))
-            continue
-        want = [assay, f[1], r.target, r.condition, "minusHarr", r.timepoint, f"rep{r.rep}"]
-        if f[:7] != want:
-            errors.append(f"{r.sample_id}: name encodes {f[:7]}, columns say {want}")
-        if r.condition not in ("minusAux", "plusAux"):
-            errors.append(f"{r.sample_id}: condition must be minusAux or plusAux, got {r.condition!r}")
-        if (r.read_type == "ribo") != (r.fastq_2 == ""):
-            errors.append(f"{r.sample_id}: fastq_2 must be empty for ribo and set for rna")
-        if r.experiment != f"{r.target}_{r.timepoint}":
-            errors.append(f"{r.sample_id}: experiment must be {r.target}_{r.timepoint}, got {r.experiment!r}")
-    for (t, tp), sub in samples.groupby(["target", "timepoint"]):
+    for exp, sub in samples[samples["experiment"].isin(EXPERIMENT_NAMES)].groupby("experiment"):
         for read_type in ("ribo", "rna"):
             conds = set(sub.loc[sub["read_type"] == read_type, "condition"])
-            if conds != {"minusAux", "plusAux"}:
-                errors.append(f"{t}_{tp}: {read_type} has conditions {sorted(conds)}, needs minusAux and plusAux")
+            if conds != set(DELTATE_CONDITIONS):
+                errors.append(f"{exp}: {read_type} has conditions {sorted(conds)}, needs {DELTATE_CONDITIONS}")
     if errors:
         raise ValueError(f"{config['samples']}:\n  " + "\n  ".join(errors))
 
@@ -114,14 +92,18 @@ rule deltate_import_txabundance:
         **DELTATE_CONSTRAINTS,
     params:
         dir=DELTATE_OUT,
+        conditions=" ".join(DELTATE_CONDITIONS),
         samples=lambda wc: " ".join([str(len(samples_of(wc.exp, "ribo"))), str(len(samples_of(wc.exp, "rna")))]
                                     + samples_of(wc.exp, "ribo") + samples_of(wc.exp, "rna")),
+        sample_conditions=lambda wc: " ".join(SAMPLES.loc[samples_of(wc.exp, "ribo") + samples_of(wc.exp, "rna"),
+                                                          "condition"]),
     log:
         f"{DELTATE_LOG}.import_txabundance.log",
     conda:
         "../envs/deseq2.yaml"
     shell:
-        "Rscript {input.script} {params.dir} {params.samples} {input.ribo} {input.rna} > {log} 2>&1"
+        "Rscript {input.script} {params.dir} {params.conditions} {params.samples} {params.sample_conditions} "
+        "{input.ribo} {input.rna} > {log} 2>&1"
 
 
 rule deltate_run_deltaTE:

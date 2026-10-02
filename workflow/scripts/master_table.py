@@ -10,12 +10,14 @@ results/20260324-eif-master.csv. Logic and columns unchanged:
 - log2TE_<condition>_rep<rep> = log2(ribo TPM / RNA TPM) where the ribo TPM exists and the RNA TPM is > 0.
 The notebook's other cells only print or plot.
 
-Usage: master_table.py <gtf> <out.csv> --experiment <name> <TE.tsv> <RPF.tsv> <RNA.tsv> ...
+Usage: master_table.py <gtf> <out.csv> --conditions <reference> <treatment>
+                                       --experiment <name> <TE.tsv> <RPF.tsv> <RNA.tsv> ...
                                        --library <experiment> <read_type> <condition> <rep> <quant> ...
 --experiment: per experiment its deseq_res_{deltaTE_yeastnorm,diffribo_yeastnorm,difftotal_autonorm}.tsv, written
 in the order given. --library: per library samples.csv's read_type (ribo: ribokit's human quant; rna: salmon's
-quant.sf), condition and rep. The library columns are sorted by condition, read_type, rep, which gives his order
-(ribo minusAux, RNA minusAux, ribo plusAux, RNA plusAux); log2TE pairs ribo and RNA by condition and rep.
+quant.sf), condition and rep. The library columns are sorted by condition (reference first), read_type, rep, which
+gives his order (ribo minusAux, RNA minusAux, ribo plusAux, RNA plusAux); log2TE pairs ribo and RNA by condition and
+rep.
 """
 import argparse
 import re
@@ -29,6 +31,7 @@ TPM_COLUMN = {"ribo": "ritpm", "rna": "TPM"}
 parser = argparse.ArgumentParser()
 parser.add_argument("gtf")
 parser.add_argument("out")
+parser.add_argument("--conditions", nargs=2, required=True, metavar=("REFERENCE", "TREATMENT"))
 parser.add_argument("--experiment", nargs=4, action="append", required=True,
                     metavar=("NAME", "TE", "RPF", "RNA"))
 parser.add_argument("--library", nargs=5, action="append", required=True,
@@ -39,7 +42,7 @@ gtf, out = args.gtf, args.out
 
 def library_key(lib):
     _, read_type, condition, rep, _ = lib
-    return condition, read_type, int(rep)
+    return args.conditions.index(condition), read_type, int(rep)
 
 
 dataframes = []
@@ -91,7 +94,7 @@ master = stacked_df.merge(right=annot, on="Name", how="left")
 # his column order: rep, then condition
 pairs = [{(condition, rep) for _, t, condition, rep, _ in args.library if t == read_type} for read_type in ("ribo", "rna")]
 with np.errstate(divide="ignore", invalid="ignore"):
-    for condition, rep in sorted(pairs[0] & pairs[1], key=lambda cr: (int(cr[1]), cr[0])):
+    for condition, rep in sorted(pairs[0] & pairs[1], key=lambda cr: (int(cr[1]), args.conditions.index(cr[0]))):
         ribo_col, rna_col = f"ribo_tpm_{condition}_rep{rep}", f"rna_tpm_{condition}_rep{rep}"
         valid = master[ribo_col].notna() & (master[rna_col] > 0)
         master[f"log2TE_{condition}_rep{rep}"] = np.where(valid, np.log2(master[ribo_col] / master[rna_col]), np.nan)

@@ -1,6 +1,6 @@
 # Differential expression within one assay (workflow/rules/deltate.smk): DESeq2 on its libraries alone, design
-# ~ auxin, with size factors estimated within them (autonorm), and for ribo also from the spike-in (yeastnorm,
-# calc_sizefactors.R's).
+# ~ condition (treatment over reference, the sample table's factor levels), with size factors estimated within them
+# (autonorm), and for ribo also from the spike-in (yeastnorm, calc_sizefactors.R's).
 # Rscript run_deseq.R <dir> <assay>
 #   assay  total (RNA-seq) or ribo (Ribo-seq)
 # Reads <dir>/sampleTable.rds, txi.rds (import_txAbundance.R) and, for ribo, sizeFactors_yeast_ribo.rds; writes into
@@ -36,7 +36,7 @@ sampleTable_my_assay <- sampleTable %>% filter(assay == my_assay)
 # and keep only columns corresponding to samples of selected assay type
 txi <- readRDS(file.path(out_dir, "txi.rds"))
 txi_my_assay <- txi
-keep <- grepl(my_assay, colnames(txi$counts))
+keep <- colnames(txi$counts) %in% sampleTable_my_assay$sampleName
 txi_my_assay$counts <- txi$counts[, keep, drop = FALSE]
 txi_my_assay$abundance <-txi$abundance[, keep, drop = FALSE]
 txi_my_assay$length <- txi$length[, keep, drop = FALSE]
@@ -45,7 +45,7 @@ txi_my_assay$length <- txi$length[, keep, drop = FALSE]
 
 
 # Build DESeq data set
-dds <- DESeqDataSetFromTximport(txi = txi_my_assay, colData = sampleTable_my_assay, design = ~ auxin)
+dds <- DESeqDataSetFromTximport(txi = txi_my_assay, colData = sampleTable_my_assay, design = ~ condition)
 
 
 

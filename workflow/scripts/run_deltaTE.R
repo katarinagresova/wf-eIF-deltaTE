@@ -1,5 +1,6 @@
 # The change in translational efficiency (workflow/rules/deltate.smk): DESeq2 on the Ribo-seq and RNA-seq libraries
-# together, design ~ auxin + assay + auxin:assay, the interaction auxinplusAux.assayribo being the change in TE. Twice:
+# together, design ~ condition + assay + condition:assay, the interaction condition<treatment>.assayribo being the
+# change in TE (the sample table's factor levels, import_txAbundance.R, set the reference condition and assay). Twice:
 # the Ribo-seq size factors from the spike-in (yeastnorm, calc_sizefactors.R's), and estimated within the Ribo-seq
 # libraries (autonorm); the RNA-seq size factors are estimated within the RNA-seq libraries both times.
 # Rscript run_deltaTE.R <dir>
@@ -23,9 +24,8 @@ txi <- readRDS(file.path(out_dir, "txi.rds"))
 #print(txi)
 
 #build DESeq dataset
-dds <- DESeqDataSetFromTximport(txi = txi, colData = sampleTable, design = ~ auxin+assay+auxin:assay)
-#change reference level to RNA-seq (total rna)
-dds$assay <- relevel(dds$assay, ref = "total")
+dds <- DESeqDataSetFromTximport(txi = txi, colData = sampleTable, design = ~ condition+assay+condition:assay)
+te_coef <- make.names(paste0("condition", levels(sampleTable$condition)[2], ":assayribo"))
 # The size factors below are estimated on counts / avgTxLength, as DESeq2 does for tximport input, so they go in
 # together with avgTxLength, as normalization factors (size factor x avgTxLength, row-centred), which is what DESeq2's
 # own estimateSizeFactors() builds; set with sizeFactors<-, DESeq() would apply them to the counts without the lengths.
@@ -41,13 +41,13 @@ with_lengths <- function(sf) {
 # Make txi and sample table with only RNA samples
 sampleTable_rnaseq <- sampleTable %>% filter(assay == "total")
 txi_rnaseq <- txi
-keep <- grepl("total", colnames(txi$counts))
+keep <- colnames(txi$counts) %in% sampleTable_rnaseq$sampleName
 txi_rnaseq$counts <- txi$counts[, keep, drop = FALSE]
 txi_rnaseq$abundance <- txi$abundance[, keep, drop = FALSE]
 txi_rnaseq$length <- txi$length[, keep, drop = FALSE]
 
 # Build DESeq data set for just RNA
-dds_rnaseq <- DESeqDataSetFromTximport(txi = txi_rnaseq, colData = sampleTable_rnaseq, design = ~ auxin)
+dds_rnaseq <- DESeqDataSetFromTximport(txi = txi_rnaseq, colData = sampleTable_rnaseq, design = ~ condition)
 
 # Run DESeq2 on RNA only to extract sizefactors and save
 dds_rnaseq <- DESeq(dds_rnaseq)
@@ -67,7 +67,7 @@ normalizationFactors(dds_manual) <- with_lengths(c(my_sizeFactors_ribo, my_sizeF
 
 # Run DESeq2 and manually extract statistics for interaction term, which represents deltaTE
 dds_manual <- DESeq(dds_manual)
-res_manual <- results(dds_manual, name = "auxinplusAux.assayribo") #this step is not possible in python :()
+res_manual <- results(dds_manual, name = te_coef) #this step is not possible in python :()
 print("Dimensions of results table with manual sizefactor injection: transcripts(=rows) x DEseq2 statistics(=columns)")
 print(dim(res_manual))
 
@@ -95,14 +95,14 @@ res_manual %>% plotMAplot(., ylim = c(-8, 8), filename = "MAplot_diff_deltaTE_ye
 
 # Make txi and sample table with only RPF samples (mirror of the RNA-only block above)
 txi_ribo <- txi
-keep_ribo <- grepl("ribo", colnames(txi$counts))
+sampleTable_ribo <- sampleTable %>% filter(assay == "ribo")
+keep_ribo <- colnames(txi$counts) %in% sampleTable_ribo$sampleName
 txi_ribo$counts <- txi$counts[, keep_ribo, drop = FALSE]
 txi_ribo$abundance <- txi$abundance[, keep_ribo, drop = FALSE]
 txi_ribo$length <- txi$length[, keep_ribo, drop = FALSE]
-sampleTable_ribo <- sampleTable %>% filter(assay == "ribo")
 
 # Build RPF-only DESeq dataset and estimate length-corrected size factors within RPF only
-dds_ribo <- DESeqDataSetFromTximport(txi = txi_ribo, colData = sampleTable_ribo, design = ~ auxin)
+dds_ribo <- DESeqDataSetFromTximport(txi = txi_ribo, colData = sampleTable_ribo, design = ~ condition)
 dds_ribo <- DESeq(dds_ribo)
 normMatrix_ribo <- assays(dds_ribo)[["avgTxLength"]]
 normMatrix_ribo <- normMatrix_ribo / exp(rowMeans(log(normMatrix_ribo)))
@@ -114,7 +114,7 @@ saveRDS(my_sizeFactors_ribo_auto, file.path(out_dir, "sizeFactors_human_ribo_aut
 dds_auto <- dds
 normalizationFactors(dds_auto) <- with_lengths(c(my_sizeFactors_ribo_auto, my_sizeFactors_rna))
 dds_auto <- DESeq(dds_auto)
-res_auto <- results(dds_auto, name = "auxinplusAux.assayribo")
+res_auto <- results(dds_auto, name = te_coef)
 print("Dimensions of results table with automatic sizefactors: transcripts(=rows) x DEseq2 statistics(=columns)")
 print(dim(res_auto))
 

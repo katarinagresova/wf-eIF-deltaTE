@@ -14,7 +14,7 @@ MASTER_TARGET_ORDER = ["eIF4G1", "eIF4G2", "eIF4G3", "eIF4E", "eIF3d"]
 
 def master_experiments():
     def key(exp):
-        target, timepoint = exp.rsplit("_", 1)
+        target, timepoint = SAMPLES.loc[SAMPLES["experiment"] == exp, ["target", "timepoint"]].iloc[0]
         rank = MASTER_TARGET_ORDER.index(target) if target in MASTER_TARGET_ORDER else len(MASTER_TARGET_ORDER)
         return rank, target, timepoint
     return sorted(EXPERIMENT_NAMES, key=key)
@@ -42,9 +42,10 @@ rule master_table:
     output:
         f"{RESULTS_DIR}/master/eif-master.csv",
     params:
-        args=" ".join(" ".join(["--experiment", e, *master_tables(e)]
-                               + [x for lib in master_libraries(e) for x in ("--library", e, *lib)])
-                      for e in master_experiments()),
+        args=" ".join(["--conditions", *DELTATE_CONDITIONS]
+                      + [x for e in master_experiments() for x in ["--experiment", e, *master_tables(e)]]
+                      + [x for e in master_experiments() for lib in master_libraries(e)
+                         for x in ("--library", e, *lib)]),
     log:
         f"{LOG_DIR}/master.log",
     conda:
