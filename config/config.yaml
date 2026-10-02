@@ -8,6 +8,10 @@ samples: "config/samples.csv"
 RESULTS_DIR: "results"
 LOG_DIR: "logs"
 
+# Timepoints to analyze. The workflow will run the deltaTE analysis for each
+# timepoint, using the samples in config/samples.csv that match that timepoint.
+timepoints: [4h]
+
 # wf-riboseq-align, imported once for all experiments (see
 # workflow/rules/align.smk) from GitHub at the commit pinned there. To import a
 # local checkout instead:
@@ -40,3 +44,18 @@ align:
 # competitively against it: a read is
 # removed only if it aligns at least as well to a contaminant as to the
 # transcriptome, sense strand; a tie stays removed (contaminant_compete).
+
+# RNA-seq library correction (workflow/rules/rna_correction.smk). Within each
+# condition, each library's log2 CPM deviation from the mean of its replicates
+# is fitted as a smooth function of transcript length and GC (median
+# regression on natural splines). If the library with the most variable fit
+# exceeds max_sd, its counts are divided by the fit and the other libraries
+# are refitted, until none exceeds it.
+#   max_sd          SD of the log2 fit above which a library is corrected
+#   min_mean_count  only transcripts with at least this mean count in the
+#                   condition are fitted
+#   spline_df       degrees of freedom of each spline (length, GC)
+rna_correction:
+  max_sd: 0.3
+  min_mean_count: 10
+  spline_df: 5

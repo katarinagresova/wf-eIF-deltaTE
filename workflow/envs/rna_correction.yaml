@@ -1,0 +1,11 @@
+# The RNA-seq library correction (workflow/scripts/rna_correction.R): median
+# regression (quantreg) on natural splines, in R 4.3.1.
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - r-base=4.3.1
+  - r-quantreg=6.1
+  - r-matrix=1.6_1.1
+  - r-sparsem=1.84_2

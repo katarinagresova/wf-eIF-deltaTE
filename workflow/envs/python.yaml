@@ -1,0 +1,8 @@
+# Python for the workflow's scripts (workflow/scripts/*.py).
+name: python
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11.15
+  - numpy=2.4.6
+  - pandas=3.0.5

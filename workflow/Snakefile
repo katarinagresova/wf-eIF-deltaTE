@@ -1,19 +1,48 @@
 # The eIF depletion experiments in config/samples.csv, aligned by
-# wf-riboseq-align, imported once for all of them (rules/align.smk).
+# wf-riboseq-align, imported once for all of them (rules/align.smk), with the
+# RNA-seq library correction (rules/rna_correction.smk).
+
+import os
+
+import pandas as pd
 
 configfile: "config/config.yaml"
 
 RESULTS_DIR = config.get("RESULTS_DIR", "results")
 LOG_DIR = config.get("LOG_DIR", "logs")
 
+SAMPLES = pd.read_csv(config["samples"], dtype=str, keep_default_na=False).set_index("sample_id", drop=False)
+RIBO_SAMPLES = list(SAMPLES.loc[SAMPLES["read_type"] == "ribo", "sample_id"])
+RNA_SAMPLES = list(SAMPLES.loc[SAMPLES["read_type"] == "rna", "sample_id"])
+
+# The experiments run: samples.csv's `experiment` column, for the samples at
+# config timepoints. Adding one takes only its rows there.
+if not set(config["timepoints"]) <= set(SAMPLES["timepoint"]):
+    raise ValueError(f"config timepoints: {config['timepoints']}, samples.csv has {sorted(set(SAMPLES['timepoint']))}")
+EXPERIMENT_NAMES = sorted(set(SAMPLES.loc[SAMPLES["timepoint"].isin(config["timepoints"]), "experiment"]))
+
+
+def samples_of(exp, read_type):
+    """An experiment's ribo or rna sample ids, in samples.csv's order."""
+    return list(SAMPLES.loc[(SAMPLES["experiment"] == exp) & (SAMPLES["read_type"] == read_type), "sample_id"])
+
+
+# align.smk's per-experiment outputs: split BAMs, filtered GTF, salmon, blacklist
+ALIGN_DIR = f"{RESULTS_DIR}/align/{{exp}}"
+
 
 include: "rules/align.smk"
+include: "rules/rna_correction.smk"
 
 
 rule all:
     default_target: True
     input:
-        # everything wf-riboseq-align's own `rule all` builds, for every
-        # experiment: incl. qc/summary.tsv, whose rule fails an experiment
-        # whose spike-in fraction is below min_spike_in_fraction
-        rules.align_all.input,
+        # everything wf-riboseq-align's own `rule all` builds, not only what
+        # the steps below read: incl. qc/summary.tsv, whose rule fails an
+        # experiment whose spike-in fraction is below min_spike_in_fraction;
+        # for the experiments run only (not the other timepoints')
+        [f for f in rules.align_all.input
+         if os.path.relpath(f, f"{RESULTS_DIR}/align").split("/")[0] in EXPERIMENT_NAMES],
+        # the corrected RNA-seq quantifications + what the correction did
+        [f"{RNA_CORRECTION_DIR}/{exp}/factors.tsv" for exp in EXPERIMENT_NAMES],
