@@ -24,6 +24,15 @@ conditions:
 # local checkout instead:
 # align_snakefile: "/path/to/wf-riboseq-align/workflow/Snakefile"
 
+# The raw (pre-collapse) HCT116 transcriptome + the external short-read TPM
+# reference (workflow/rules/collapse_transcriptome.smk): our own CDS-based
+# collapse of these is what align.smk passes on as human_transcriptome_fa/gtf
+# below, not these paths themselves.
+collapse_transcriptome:
+  raw_fa: "/path/to/raw_human_transcriptome.fa"
+  raw_gtf: "/path/to/raw_human_transcriptome.gtf"
+  tpm_table: "/path/to/transcript_tpm_short_read.csv"
+
 # This block is passed as the `align:` module's own config (its own
 # config.yaml shape -- see wf-riboseq-align/config/config.yaml), minus
 # `samples`/`RESULTS_DIR`/`LOG_DIR`, which align.smk sets: samples is the
@@ -34,8 +43,8 @@ align:
   minlength: 18
   maxlength: 100
   qualcutoff: 20
-  human_transcriptome_fa: "/path/to/human_transcriptome.fa"
-  human_transcriptome_gtf: "/path/to/human_transcriptome.gtf"
+  # human_transcriptome_fa/gtf: not set here -- collapse_transcriptome.smk builds
+  # them from collapse_transcriptome: above, passed in by align.smk
   spike_in_transcriptome_fa: "/path/to/yeast_transcriptome.fa"
   min_spike_in_fraction: 0.01
   autofilter:

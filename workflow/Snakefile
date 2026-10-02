@@ -33,6 +33,7 @@ def samples_of(exp, read_type):
 ALIGN_DIR = f"{RESULTS_DIR}/align/{{exp}}"
 
 
+include: "rules/collapse_transcriptome.smk"
 include: "rules/align.smk"
 include: "rules/rna_correction.smk"
 include: "rules/ribokit.smk"

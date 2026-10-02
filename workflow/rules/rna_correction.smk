@@ -17,7 +17,7 @@ RNA_CORRECTION_QUANT = f"{RNA_CORRECTION_DIR}/{{exp}}/{{sample}}_quant.sf"
 # length and GC of every transcript of the reference salmon quantifies against
 rule rna_correction_features:
     input:
-        fa=config["align"]["human_transcriptome_fa"],
+        fa=COLLAPSED_FA,
         script=workflow.source_path("../scripts/transcript_features.py"),
     output:
         RNA_CORRECTION_FEATURES,

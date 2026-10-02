@@ -24,6 +24,9 @@ ALIGN_CONFIG = {
     **config["align"],
     # the RNA-seq salmon index's decoys (wf-riboseq-align 7ac127c on); the same genome as ribokit's
     "human_genome_fa": config["references"]["human_genome_fa"],
+    # our own CDS-based collapse (collapse_transcriptome.smk), not config's
+    "human_transcriptome_fa": COLLAPSED_FA,
+    "human_transcriptome_gtf": COLLAPSED_GTF,
     "samples": config["samples"],
     "RESULTS_DIR": f"{RESULTS_DIR}/align",
     "LOG_DIR": f"{LOG_DIR}/align",

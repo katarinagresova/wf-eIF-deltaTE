@@ -37,7 +37,7 @@ rule master_table:
     input:
         tables=[t for e in master_experiments() for t in master_tables(e)],
         quants=[lib[3] for e in master_experiments() for lib in master_libraries(e)],
-        gtf=config["align"]["human_transcriptome_gtf"],
+        gtf=COLLAPSED_GTF,
         script=workflow.source_path("../scripts/master_table.py"),
     output:
         f"{RESULTS_DIR}/master/eif-master.csv",
