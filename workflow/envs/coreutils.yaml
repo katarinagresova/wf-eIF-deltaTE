@@ -1,0 +1,7 @@
+name: coreutils
+channels:
+  - conda-forge
+dependencies:
+  - coreutils=9.12
+  - gawk=5.4.1
+  - grep=3.12

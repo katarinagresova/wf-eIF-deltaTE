@@ -26,8 +26,8 @@ conditions:
 
 # The raw (pre-collapse) HCT116 transcriptome + the external short-read TPM
 # reference (workflow/rules/collapse_transcriptome.smk): our own CDS-based
-# collapse of these is what align.smk passes on as human_transcriptome_fa/gtf
-# below, not these paths themselves.
+# collapse of these is what align.smk passes on as human_transcriptome_fa
+# below, and what rnaseq.smk and ribokit.smk use, not these paths themselves.
 collapse_transcriptome:
   raw_fa: "/path/to/raw_human_transcriptome.fa"
   raw_gtf: "/path/to/raw_human_transcriptome.gtf"
@@ -36,20 +36,25 @@ collapse_transcriptome:
 # This block is passed as the `align:` module's own config (its own
 # config.yaml shape -- see wf-riboseq-align/config/config.yaml), minus
 # `samples`/`RESULTS_DIR`/`LOG_DIR`, which align.smk sets: samples is the
-# `samples` above (its `experiment` column splits the experiments).
+# `samples` above (its `experiment` column splits the experiments). It aligns
+# the Ribo-seq only, to the whole (collapsed) transcriptome.
 align:
-  mode: "filtered"
   adapter: "TGGAATTCTCGGGTGCCAAGG"
   minlength: 18
   maxlength: 100
   qualcutoff: 20
-  # human_transcriptome_fa/gtf: not set here -- collapse_transcriptome.smk builds
-  # them from collapse_transcriptome: above, passed in by align.smk
+  # human_transcriptome_fa: not set here -- collapse_transcriptome.smk builds
+  # it from collapse_transcriptome: above, passed in by align.smk
   spike_in_transcriptome_fa: "/path/to/yeast_transcriptome.fa"
   min_spike_in_fraction: 0.01
-  autofilter:
-    min_tpm: 0.01
-    min_samples: 2
+
+# The RNA-seq expression filter (workflow/rules/rnaseq.smk), per experiment: a
+# transcript is kept if salmon's TPM >= min_tpm in >= min_samples of the
+# experiment's RNA-seq libraries, else blacklisted. The blacklist is applied
+# when counting (ribokit's GTF, the RNA-seq quants), not to the alignment.
+autofilter:
+  min_tpm: 0.01
+  min_samples: 2
 
 # The Ribo-seq contaminant set: by default the one wf-riboseq-align ships
 # (resources/contaminants_built.fa), fetched from GitHub at the commit
@@ -61,9 +66,10 @@ align:
 # removed only if it aligns at least as well to a contaminant as to the
 # transcriptome, sense strand; a tie stays removed (contaminant_compete).
 
-# Ribo-seq quantification (workflow/rules/ribokit.smk): the genome fasta of
-# the human transcriptome GTF (ribokit reads the RNA-seq-filtered GTF align.smk
-# builds per experiment), and the spike-in (yeast) genome fasta and GTF.
+# The human genome fasta: salmon's decoys (workflow/rules/rnaseq.smk) and
+# ribokit's fasta for the human transcriptome GTF (ribokit reads the
+# RNA-seq-filtered GTF rnaseq.smk builds per experiment). The spike-in (yeast)
+# genome fasta and GTF: ribokit (workflow/rules/ribokit.smk).
 references:
   human_genome_fa: "/path/to/human_genome.fa"
   yeast_genome_fa: "/path/to/yeast_genome.fa"

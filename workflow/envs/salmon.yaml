@@ -1,0 +1,7 @@
+# salmon version = the eIF pipeline's container
+name: salmon
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - salmon=1.10.2

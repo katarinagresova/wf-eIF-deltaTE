@@ -1,0 +1,8 @@
+# MultiQC config for rule multiqc_rnaseq (rules/rnaseq.smk): salmon, then the
+# raw RNA-seq FastQC (<sample>_R1, <sample>_R2).
+no_version_check: true
+module_order:
+  - salmon
+  - fastqc:
+      name: "FastQC: raw RNA-seq"
+      anchor: fastqc_rna_raw

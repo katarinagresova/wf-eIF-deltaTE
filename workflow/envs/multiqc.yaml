@@ -1,0 +1,7 @@
+# MultiQC report only; the eIF pipeline's container had no MultiQC step.
+name: multiqc
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - multiqc=1.35

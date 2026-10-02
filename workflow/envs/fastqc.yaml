@@ -1,0 +1,7 @@
+# FastQC reports only; the eIF pipeline's container had no FastQC step.
+name: fastqc
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - fastqc=0.12.1

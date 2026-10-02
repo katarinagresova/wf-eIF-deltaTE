@@ -5,29 +5,64 @@ change of every transcript between two conditions in Ribo-seq, in RNA-seq and in
 efficiency. The Ribo-seq libraries carry a spike-in (yeast in the config and output names), from
 which their size factors can be taken.
 
-fastq -> [wf-riboseq-align](https://github.com/katarinagresova/wf-riboseq-align) (trimming,
-contaminant filter, STAR, salmon), imported as a Snakemake module -> RNA-seq library correction
--> [ribokit](https://github.com/katarinagresova/ribokit) (Ribo-seq reads per CDS) -> DESeq2
-deltaTE model -> master table.
+Ribo-seq fastq -> [wf-riboseq-align](https://github.com/katarinagresova/wf-riboseq-align)
+(trimming, contaminant filter, STAR), imported as a Snakemake module ->
+[ribokit](https://github.com/katarinagresova/ribokit) (Ribo-seq reads per CDS); RNA-seq fastq ->
+salmon -> expression filter -> RNA-seq library correction; both -> DESeq2 deltaTE model ->
+master table. Both assays are counted on the same transcriptome, collapsed by coding sequence.
 
 The experiments, their conditions and their libraries are defined in the sample sheet,
 `config/samples.csv`: its `experiment` column splits the libraries into as many experiments as
 it names, and config `timepoints` selects which of them run (those at the timepoints listed).
 Adding an experiment takes only its rows there.
 
+## Reference transcriptome
+
+`workflow/rules/collapse_transcriptome.smk` collapses the human transcriptome of config
+`collapse_transcriptome` (fasta, GTF, and an external short-read TPM table for the tie-break):
+transcripts with an identical CDS keep one, across gene ids too, as a Ribo-seq read cannot tell
+them apart; then a CDS at least 99% covered by another of the same gene merges into it; then each
+gene keeps one transcript. `results/resources/` holds the collapsed fasta and GTF, and
+`collapse_report.tsv` (every group, and why it was resolved). Everything downstream uses it.
+
 ## Alignment: wf-riboseq-align as a module
 
 `workflow/rules/align.smk` imports wf-riboseq-align once, from GitHub at a pinned commit, with
 the `align:` block of `config/config.yaml` as its config and `config/samples.csv` as its sample
-sheet; its rules are renamed `align_<rule>`. Each experiment gets its own
-`results/align/<experiment>/`, and with `mode: filtered` its Ribo-seq reads are mapped to a
-transcriptome filtered by that experiment's own RNA-seq. What does not depend on the experiment
-(the contaminant index, the RNA-seq index of the unfiltered transcriptome) is built once, in
-`results/align/`.
+sheet; its rules are renamed `align_<rule>`. It aligns the Ribo-seq only (the `rna` rows are
+skipped), to the whole collapsed transcriptome plus the spike-in, and splits the alignments into a
+human and a spike-in BAM file. Each experiment gets its own `results/align/<experiment>/` (split
+BAMs, `qc/summary.tsv`, FastQC, MultiQC). What does not depend on the experiment (the Ribo-seq
+reference, the contaminant and transcriptome STAR indexes) is built once, in `results/align/`.
+
+## RNA-seq: salmon and the expression filter
+
+`workflow/rules/rnaseq.smk`, per experiment (the rules were wf-riboseq-align's until it became
+Ribo-seq only, behaviour unchanged):
+- salmon 1.10.2 (the version of the original pipeline's container) quantifies each paired-end
+  library on its fastq files, by selective alignment (`-l A --seqBias --gcBias`), against an index
+  of the collapsed transcriptome with every sequence of the genome (config
+  `references: human_genome_fa`) as a decoy: a fragment that aligns better to the genome than to
+  any transcript is counted for none. `--keepDuplicates`, so that a transcript whose sequence
+  duplicates another's stays in `quant.sf`. salmon samples fragments for its bias models from a
+  random seed it does not expose, so a rerun can differ slightly (at most a few transcripts change
+  sides of the expression filter's threshold); `-p 1` does not make it deterministic either.
+- The expression filter (config `autofilter`): a transcript is kept if its TPM is at least
+  `min_tpm` in at least `min_samples` of the experiment's RNA-seq libraries, else blacklisted.
+  The blacklist applies to what is counted, not to the Ribo-seq alignment: ribokit counts on the
+  collapsed GTF minus the blacklist, and the RNA-seq library correction, then DESeq2, read
+  `quant.rnaseq_filtered.sf`: salmon's `quant.sf` minus the blacklisted rows, sorted by name, the
+  values as salmon wrote them (TPM is not renormalised).
+
+The index is built once, in `results/rnaseq/salmon_index/`; `results/rnaseq/<experiment>/` holds
+`salmon/<sample>/` (salmon's output and `quant.rnaseq_filtered.sf`),
+`rnaseq_filter_blacklist_txid.txt`, `human_transcriptome.rnaseq_filtered.gtf`, FastQC of the raw
+fastq files (`fastqc/`) and a MultiQC report of salmon and FastQC (`multiqc/`).
 
 ## RNA-seq library correction
 
-`workflow/rules/rna_correction.smk`, per experiment and condition: each RNA-seq library's
+`workflow/rules/rna_correction.smk`, per experiment and condition, on the filtered quants: each
+RNA-seq library's
 deviation from its replicates is fitted as a smooth function of transcript length and GC. While
 the most variable fit has an SD above `max_sd`, that library is divided by its fit and the
 others are refitted (config `rna_correction`). `results/rna_correction/<experiment>/` holds
@@ -88,9 +123,11 @@ replicate, and the transcript annotation from the GTF. The experiments are stack
   keys it changes:
   ```yaml
   samples: "config/local/samples.csv"
+  collapse_transcriptome:
+    raw_fa: "/data/human_transcriptome.fa"
+    raw_gtf: "/data/human_transcriptome.gtf"
+    tpm_table: "/data/transcript_tpm_short_read.csv"
   align:
-    human_transcriptome_fa: "/data/human_transcriptome.fa"
-    human_transcriptome_gtf: "/data/human_transcriptome.gtf"
     spike_in_transcriptome_fa: "/data/yeast_transcriptome.fa"
   references:
     human_genome_fa: "/data/human_genome.fa"

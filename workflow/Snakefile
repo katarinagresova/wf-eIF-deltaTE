@@ -1,5 +1,6 @@
-# The eIF depletion experiments in config/samples.csv, aligned by
-# wf-riboseq-align, imported once for all of them (rules/align.smk), with the
+# The eIF depletion experiments in config/samples.csv: the Ribo-seq aligned by
+# wf-riboseq-align, imported once for all of them (rules/align.smk), the
+# RNA-seq quantified and the expression filter (rules/rnaseq.smk), with the
 # RNA-seq library correction (rules/rna_correction.smk), the Ribo-seq
 # quantification (rules/ribokit.smk), the deltaTE model (rules/deltate.smk)
 # and the master table (rules/master.smk).
@@ -29,12 +30,13 @@ def samples_of(exp, read_type):
     return list(SAMPLES.loc[(SAMPLES["experiment"] == exp) & (SAMPLES["read_type"] == read_type), "sample_id"])
 
 
-# align.smk's per-experiment outputs: split BAMs, filtered GTF, salmon, blacklist
+# align.smk's per-experiment outputs: split BAMs, qc
 ALIGN_DIR = f"{RESULTS_DIR}/align/{{exp}}"
 
 
 include: "rules/collapse_transcriptome.smk"
 include: "rules/align.smk"
+include: "rules/rnaseq.smk"
 include: "rules/rna_correction.smk"
 include: "rules/ribokit.smk"
 include: "rules/deltate.smk"
@@ -50,6 +52,8 @@ rule all:
         # for the experiments run only (not the other timepoints')
         [f for f in rules.align_all.input
          if os.path.relpath(f, f"{RESULTS_DIR}/align").split("/")[0] in EXPERIMENT_NAMES],
+        # the RNA-seq QC (salmon, FastQC)
+        [f"{RNASEQ_DIR}/{exp}/multiqc/multiqc_report.html" for exp in EXPERIMENT_NAMES],
         # the corrected RNA-seq quantifications + what the correction did
         [f"{RNA_CORRECTION_DIR}/{exp}/factors.tsv" for exp in EXPERIMENT_NAMES],
         # the Ribo-seq quantifications

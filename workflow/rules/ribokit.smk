@@ -1,8 +1,8 @@
 # Ribo-seq quantification with ribokit (envs/ribokit.yaml pins its commit), per
 # Ribo-seq library: P-site offsets from the reads on the human transcripts,
 # then reads per human CDS, and per spike-in (yeast) CDS with the human
-# offsets. Inputs: align.smk's split human / spike-in BAMs and the
-# experiment's RNA-seq-filtered GTF, and the genome fastas and spike-in GTF of
+# offsets. Inputs: align.smk's split human / spike-in BAMs, the experiment's
+# RNA-seq-filtered GTF (rnaseq.smk), and the genome fastas and spike-in GTF of
 # config references:. Only reads of config read_lengths count, the same window
 # in every library. In results/ribokit/<exp>/, per library and species (human,
 # yeast):
@@ -39,7 +39,7 @@ rule ribokit_human_morfs:
     input:
         bam=f"{ALIGN_DIR}/split_bam/transcriptome/human/{{sample}}.bam",
         fasta=config["references"]["human_genome_fa"],
-        gtf=f"{ALIGN_DIR}/reference/human_transcriptome.rnaseq_filtered.gtf",
+        gtf=RNASEQ_GTF,
     output:
         quant=f"{RIBOKIT_OUT}.human.quant.tsv",
         offsets=f"{RIBOKIT_OUT}.human.offsets.tsv",

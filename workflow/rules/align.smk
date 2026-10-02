@@ -1,15 +1,14 @@
 # Import wf-riboseq-align once, for every experiment in samples.csv (its
-# `experiment` column, <target>_<timepoint>): each experiment's outputs land in
-# results/align/<experiment>/, and `mode: filtered` builds each one its own
-# RNA-seq-filtered reference. What does not depend on the experiment (the
-# contaminant index, the unfiltered RNA-seq index) is built once, in
-# results/align/.
+# `experiment` column, <target>_<timepoint>): it aligns the Ribo-seq only, each
+# experiment's outputs in results/align/<experiment>/. What does not depend on
+# the experiment (the Ribo-seq reference, the contaminant and transcriptome STAR
+# indexes) is built once, in results/align/. The RNA-seq: rnaseq.smk.
 
 from snakemake.io import sourcecache_entry
 
 # wf-riboseq-align at a pinned commit, fetched from GitHub; config
 # `align_snakefile` (a local checkout's workflow/Snakefile) replaces it.
-ALIGN_REPO, ALIGN_COMMIT = "katarinagresova/wf-riboseq-align", "766b40aac8cbb27e36eaee94870669c68adc88ab"
+ALIGN_REPO, ALIGN_COMMIT = "katarinagresova/wf-riboseq-align", "047355291c4a285383b818b219fbb980a79dba29"
 ALIGN_SNAKEFILE = config.get("align_snakefile") or github(ALIGN_REPO, path="workflow/Snakefile", commit=ALIGN_COMMIT)
 
 # The Ribo-seq contaminant set wf-riboseq-align ships (its build_contaminants
@@ -22,11 +21,8 @@ ALIGN_CONFIG = {
     "contaminants_fa": sourcecache_entry(workflow.sourcecache.get_path(_CONTAMINANTS),
                                          _CONTAMINANTS.get_path_or_uri()),
     **config["align"],
-    # the RNA-seq salmon index's decoys (wf-riboseq-align 7ac127c on); the same genome as ribokit's
-    "human_genome_fa": config["references"]["human_genome_fa"],
     # our own CDS-based collapse (collapse_transcriptome.smk), not config's
     "human_transcriptome_fa": COLLAPSED_FA,
-    "human_transcriptome_gtf": COLLAPSED_GTF,
     "samples": config["samples"],
     "RESULTS_DIR": f"{RESULTS_DIR}/align",
     "LOG_DIR": f"{LOG_DIR}/align",
