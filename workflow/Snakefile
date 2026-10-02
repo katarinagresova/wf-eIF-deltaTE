@@ -1,7 +1,7 @@
 # The eIF depletion experiments in config/samples.csv, aligned by
 # wf-riboseq-align, imported once for all of them (rules/align.smk), with the
-# RNA-seq library correction (rules/rna_correction.smk) and the Ribo-seq
-# quantification (rules/ribokit.smk).
+# RNA-seq library correction (rules/rna_correction.smk), the Ribo-seq
+# quantification (rules/ribokit.smk) and the deltaTE model (rules/deltate.smk).
 
 import os
 
@@ -35,6 +35,7 @@ ALIGN_DIR = f"{RESULTS_DIR}/align/{{exp}}"
 include: "rules/align.smk"
 include: "rules/rna_correction.smk"
 include: "rules/ribokit.smk"
+include: "rules/deltate.smk"
 
 
 rule all:
@@ -51,3 +52,8 @@ rule all:
         # the Ribo-seq quantifications
         [f"{RIBOKIT_DIR}/{exp}/{s}.{species}.quant.tsv"
          for exp in EXPERIMENT_NAMES for s in samples_of(exp, "ribo") for species in ("human", "yeast")],
+        # the deltaTE model + DESeq2 per assay
+        [f"{DELTATE_DIR}/{exp}/deseq_res_{kind}.tsv"
+         for exp in EXPERIMENT_NAMES
+         for kind in ("deltaTE_yeastnorm", "deltaTE_autonorm", "diffribo_yeastnorm", "diffribo_autonorm",
+                      "difftotal_autonorm")],

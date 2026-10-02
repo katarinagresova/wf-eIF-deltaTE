@@ -1,0 +1,29 @@
+# Frederick's deltaTE scripts (calc_sizefactors / import_txAbundance /
+# run_deltaTE / run_deseq.R, deltate.smk). Pinned to his container,
+# docker://ggvillamil/eif (eif4e_4h/.snakemake/singularity/fd14e885*.simg):
+# R 4.3.1 / Bioconductor 3.17, versions read from its installed.packages().
+# Every pin below is the container's exact version.
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - r-base=4.3.1
+  - bioconductor-deseq2=1.40.2
+  - bioconductor-tximport=1.28.0
+  - r-locfit=1.5_9.8
+  - r-matrixstats=1.1.0
+  - r-matrix=1.6_1.1
+  - r-tidyverse=2.0.0
+  - r-readr=2.1.4
+  - r-vroom=1.6.4
+  - r-dplyr=1.1.3
+  - r-tidyr=1.3.0
+  - r-tibble=3.2.1
+  - r-stringr=1.5.0
+  - r-purrr=1.0.2
+  - r-forcats=1.0.0
+  - r-lubridate=1.9.3
+  - r-ggplot2=3.4.4
+  - r-magrittr=2.0.3
+  - r-here=1.0.1
