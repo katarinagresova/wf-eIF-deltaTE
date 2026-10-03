@@ -52,3 +52,24 @@ rule master_table:
         "../envs/python.yaml"
     shell:
         "python {input.script} {input.gtf} {output} {params.args} > {log} 2>&1"
+
+
+# The master table restricted to the transcripts expressed in the reference
+# condition (config master_filter, workflow/scripts/filter_master.py): per
+# experiment, Ribo-seq ritpm and RNA-seq TPM above their floors in every
+# reference library. After DESeq2, so padj is the full table's.
+rule master_table_filtered:
+    input:
+        master=rules.master_table.output[0],
+        script=workflow.source_path("../scripts/filter_master.py"),
+    output:
+        f"{RESULTS_DIR}/master/eif-master.filtered.csv",
+    params:
+        args=" ".join(map(str, [DELTATE_CONDITIONS[0], config["master_filter"]["min_ribo_tpm"],
+                                config["master_filter"]["min_rna_tpm"]])),
+    log:
+        f"{LOG_DIR}/master_filtered.log",
+    conda:
+        "../envs/python.yaml"
+    shell:
+        "python {input.script} {input.master} {output} {params.args} > {log} 2>&1"

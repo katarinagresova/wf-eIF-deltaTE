@@ -64,5 +64,6 @@ rule all:
          for exp in EXPERIMENT_NAMES
          for kind in ("deltaTE_yeastnorm", "deltaTE_autonorm", "diffribo_yeastnorm", "diffribo_autonorm",
                       "difftotal_autonorm")],
-        # the master table
+        # the master table, full and filtered
         f"{RESULTS_DIR}/master/eif-master.csv",
+        f"{RESULTS_DIR}/master/eif-master.filtered.csv",

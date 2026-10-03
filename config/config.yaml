@@ -95,3 +95,14 @@ rna_correction:
   max_sd: 0.3
   min_mean_count: 10
   spline_df: 5
+
+# The filtered master table (workflow/rules/master.smk), next to the full one:
+# per experiment, a transcript is kept if, in every library of the reference
+# condition, its Ribo-seq ritpm >= min_ribo_tpm and its RNA-seq TPM >=
+# min_rna_tpm. The Ribo-seq floor is the paper's row filter (wf-transmod-data's
+# ribo_tpm_threshold); the RNA-seq floor drops transcripts the RNA-seq barely
+# sees (mostly histone mRNAs, which have no poly(A) tail), whose TE is
+# meaningless. Applied after DESeq2: padj is the full table's.
+master_filter:
+  min_ribo_tpm: 5
+  min_rna_tpm: 1

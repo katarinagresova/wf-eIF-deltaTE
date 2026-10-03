@@ -104,6 +104,12 @@ transcript: log2FC and padj of TE (`deltaTE_yeastnorm`), RPF (`diffribo_yeastnor
 replicate, and the transcript annotation from the GTF. The experiments are stacked by target
 (the targets in `MASTER_TARGET_ORDER` in master.smk first, any other by name) and timepoint.
 
+`results/master/eif-master.filtered.csv`: the same table restricted, per experiment, to the
+transcripts with Ribo-seq ritpm >= 5 and RNA-seq TPM >= 1 in every library of the reference
+condition (config `master_filter`). The Ribo-seq floor is the paper's row filter; the RNA-seq
+floor drops transcripts whose TE is meaningless because the RNA-seq barely sees them (mostly
+histone mRNAs). Filtered after DESeq2, so padj is the full table's.
+
 ## Sample sheet
 
 `config/samples.csv` has one row per library: `sample_id`, `target`, `timepoint`, `condition`,
