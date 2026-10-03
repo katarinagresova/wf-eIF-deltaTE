@@ -2,9 +2,10 @@
 
 The Ribo-seq and RNA-seq libraries as two transcript x library matrices, Ribo-seq libraries first, as tximport
 (type "salmon", txOut, countsFromAbundance "no") would give them: counts = NumReads, length = EffectiveLength. The rows
-are the RNA-seq quants' transcripts (every RNA-seq quant has the same), sorted by Name; a transcript a Ribo-seq quant
-lacks (no CDS) gets 0 reads and length 1, and a missing NumReads counts 0. Per Ribo-seq library its spike-in reads
-(deseq2.R's spike-in size factors are each library's over the first's, so the order of the --ribo libraries matters).
+are the RNA-seq quants' transcripts (every RNA-seq quant has the same), sorted by Name; a transcript the Ribo-seq quants
+lack (no CDS: the Ribo-seq is counted on CDSs) is NA in their columns, and a missing NumReads counts 0. Per Ribo-seq
+library its spike-in reads (deseq2.R's spike-in size factors are each library's over the first's, so the order of the
+--ribo libraries matters).
 
 Usage: deltate_inputs.py <dir> --ribo <sample> <condition> <human quant> <spike-in quant> ...
                                --rna <sample> <condition> <quant> ...
@@ -44,13 +45,13 @@ def main():
     for s, q in rna.items():
         assert set(q.index) == set(names), f"{s}: other transcripts than {args.rna[0][0]}"
     for s, q in ribo.items():
+        assert set(q.index) == set(next(iter(ribo.values())).index), f"{s}: other transcripts than {args.ribo[0][0]}"
         assert set(q.index) <= set(names), f"{s}: transcripts without RNA-seq: {sorted(set(q.index) - set(names))[:5]}"
 
     quants = ribo | rna
-    counts = pd.DataFrame({s: q["NumReads"].reindex(names).fillna(0) for s, q in quants.items()})
-    length = pd.DataFrame({s: q["EffectiveLength"].reindex(names).fillna(1 if s in ribo else math.nan)
-                           for s, q in quants.items()}).astype(float)
-    assert (length > 0).all().all(), "a length is missing or not positive"
+    counts = pd.DataFrame({s: q["NumReads"].fillna(0).reindex(names) for s, q in quants.items()})
+    length = pd.DataFrame({s: q["EffectiveLength"].reindex(names) for s, q in quants.items()}).astype(float)
+    assert ((length > 0) == counts.notna()).all().all(), "a length is missing or not positive"
 
     spike_in = pd.Series({s: math.fsum(read_quant(path)["NumReads"].dropna()) for s, _, _, path in args.ribo})
 

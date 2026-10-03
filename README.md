@@ -91,7 +91,9 @@ the Ribo-seq and RNA-seq libraries together with design `~ condition + assay + c
 the change in translational efficiency is the interaction. Fold changes are treatment over
 reference (config `conditions`). The Ribo-seq size factors come from the spike-in (`yeastnorm`)
 or are estimated within the libraries (`autonorm`), and go into the model together with the
-transcript lengths, as normalization factors. Each assay is also fitted alone. DESeq2's
+transcript lengths, as normalization factors. Each assay is also fitted alone. ribokit counts
+the Ribo-seq on CDSs, so the deltaTE and Ribo-seq models are fitted on the transcripts with a
+CDS; the RNA-seq model and the RNA-seq size factors on every transcript. DESeq2's
 independent filtering is tuned for hits at padj < 0.05 (`results(alpha = 0.05)`; its default is
 0.1). `results/deltaTE/<experiment>/` holds (as `.tsv`, MA plots in `plots/`; DESeq2's input in
 `counts.tsv`, `length.tsv`, `sampleTable.tsv`, `spike_in_reads.tsv`):
@@ -106,8 +108,9 @@ independent filtering is tuned for hits at padj < 0.05 (`results(alpha = 0.05)`;
 
 `workflow/rules/master.smk` -> `results/master/eif-master.csv`: all experiments run, per
 transcript: log2FC and padj of TE (`deltaTE_yeastnorm`), RPF (`diffribo_yeastnorm`) and RNA
-(`difftotal_autonorm`), the TPM of every library (ribokit's ritpm, salmon's TPM), log2TE per
-replicate, and the transcript annotation from the GTF. The experiments are stacked by target
+(`difftotal_autonorm`; a transcript without a CDS has RNA only), the TPM of every library
+(ribokit's ritpm, salmon's TPM), log2TE per replicate, and the transcript annotation from the
+GTF. The experiments are stacked by target
 (the targets in `MASTER_TARGET_ORDER` in master.smk first, any other by name) and timepoint.
 
 `results/master/eif-master.filtered.csv`: the same table restricted, per experiment, to the
