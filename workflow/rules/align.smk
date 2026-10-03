@@ -8,7 +8,7 @@ from snakemake.io import sourcecache_entry
 
 # wf-riboseq-align at a pinned commit, fetched from GitHub; config
 # `align_snakefile` (a local checkout's workflow/Snakefile) replaces it.
-ALIGN_REPO, ALIGN_COMMIT = "katarinagresova/wf-riboseq-align", "047355291c4a285383b818b219fbb980a79dba29"
+ALIGN_REPO, ALIGN_COMMIT = "katarinagresova/wf-riboseq-align", "7c5cee5c9d22528135342a394fc03a7ef86d28d5"
 ALIGN_SNAKEFILE = config.get("align_snakefile") or github(ALIGN_REPO, path="workflow/Snakefile", commit=ALIGN_COMMIT)
 
 # The Ribo-seq contaminant set wf-riboseq-align ships (its build_contaminants

@@ -61,10 +61,11 @@ autofilter:
 # align.smk pins; `align: contaminants_fa: <fasta>` replaces it. Made by its
 # build_contaminants rule (needs internet access; see README.md):
 # Ensembl 109 human + yeast ncRNA except lncRNA, GtRNAdb hg38 tRNAs, 4 RefSeq
-# rRNAs, and 14 index/marker sequences. wf-riboseq-align filters
-# competitively against it: a read is
-# removed only if it aligns at least as well to a contaminant as to the
-# transcriptome, sense strand; a tie stays removed (contaminant_compete).
+# rRNAs, and 14 index/marker sequences. wf-riboseq-align aligns each read
+# once (bowtie, forward-strand only) against one combined index of the
+# transcriptome, spike-in and this set, then classifies it by mismatch
+# count: a read is kept only if its best alignment is to the transcriptome
+# (or spike-in), strictly better than to a contaminant; a tie is dropped.
 
 # The human genome fasta: salmon's decoys (workflow/rules/rnaseq.smk) and
 # ribokit's fasta for the human transcriptome GTF (ribokit reads the

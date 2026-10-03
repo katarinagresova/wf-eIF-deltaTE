@@ -6,7 +6,7 @@ efficiency. The Ribo-seq libraries carry a spike-in (yeast in the config and out
 which their size factors can be taken.
 
 Ribo-seq fastq -> [wf-riboseq-align](https://github.com/katarinagresova/wf-riboseq-align)
-(trimming, contaminant filter, STAR), imported as a Snakemake module ->
+(trimming, contaminant filter, bowtie), imported as a Snakemake module ->
 [ribokit](https://github.com/katarinagresova/ribokit) (Ribo-seq reads per CDS); RNA-seq fastq ->
 salmon -> expression filter -> RNA-seq library correction; both -> DESeq2 deltaTE model ->
 master table. Both assays are counted on the same transcriptome, collapsed by coding sequence.
@@ -33,7 +33,8 @@ sheet; its rules are renamed `align_<rule>`. It aligns the Ribo-seq only (the `r
 skipped), to the whole collapsed transcriptome plus the spike-in, and splits the alignments into a
 human and a spike-in BAM file. Each experiment gets its own `results/align/<experiment>/` (split
 BAMs, `qc/summary.tsv`, FastQC, MultiQC). What does not depend on the experiment (the Ribo-seq
-reference, the contaminant and transcriptome STAR indexes) is built once, in `results/align/`.
+reference and the combined bowtie index of the transcriptome, spike-in and contaminants) is built
+once, in `results/align/`.
 
 ## RNA-seq: salmon and the expression filter
 

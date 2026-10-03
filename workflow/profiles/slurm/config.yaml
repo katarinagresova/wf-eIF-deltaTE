@@ -24,7 +24,7 @@ default-resources:
 # set-resources matches rule names exactly. Values copied from
 # wf-riboseq-align/workflow/profiles/slurm/config.yaml. Without them,
 # default-resources' cpus_per_task: 1 would override the rules' own
-# threads: 8/12.
+# threads: 8.
 set-resources:
   align_cutadapt_reads:
     cpus_per_task: 4
@@ -33,22 +33,10 @@ set-resources:
     mem_mb: 16000
   align_trim_reads:
     cpus_per_task: 4
-  align_star_contaminant_index:
+  align_bowtie_index:
     cpus_per_task: 8
-  align_star_contaminant:
+  align_bowtie_align:
     cpus_per_task: 8
-    mem_mb: 16000
-  align_contaminant_compete_align:
-    cpus_per_task: 8
-    mem_mb: 24000
-  align_contaminant_compete:
-    mem_mb: 16000
-  align_star_transcript_index:
-    cpus_per_task: 8
-    mem_mb: 16000
-  align_star_transcript:
-    cpus_per_task: 12
-    mem_mb: 24000
   # rnaseq.smk: the rules' threads, their mem_mb is in the rules
   salmon_index:
     cpus_per_task: 16
