@@ -19,10 +19,15 @@ Adding an experiment takes only its rows there.
 ## Reference transcriptome
 
 `workflow/rules/collapse_transcriptome.smk` collapses the human transcriptome of config
-`collapse_transcriptome` (fasta, GTF, and an external short-read TPM table for the tie-break):
-transcripts with an identical CDS keep one, across gene ids too, as a Ribo-seq read cannot tell
-them apart; then a CDS at least 99% covered by another of the same gene merges into it; then each
-gene keeps one transcript. `results/resources/` holds the collapsed fasta and GTF, and
+`collapse_transcriptome` (fasta, GTF, and an external short-read TPM table for the tie-break).
+First, the genes that GENCODE (`gencode_gtf`) calls readthroughs are dropped (RPS10-NUDT3): their
+CDS spans two genes' CDSs. Then transcripts with an identical CDS keep one, across gene ids too, as a
+Ribo-seq read cannot tell them apart; a CDS at least 99% covered by another of the same gene merges
+into it; and each gene keeps one transcript. Last, a CDS of which fewer than `min_unique_fraction`
+(0.2) of the `kmer`-mers (28) occur in no other CDS merges into the CDS it shares most with
+(paralogs: EIF3C / EIF3CL, SMN1 / SMN2). A merged group keeps a protein-coding gene, then the higher
+TPM. Readthroughs and paralogs share most of their footprints with another gene, so their counts
+jumped between replicates. `results/resources/` holds the collapsed fasta and GTF, and
 `collapse_report.tsv` (every group, and why it was resolved). Everything downstream uses it.
 
 ## Alignment: wf-riboseq-align as a module
@@ -134,6 +139,7 @@ histone mRNAs). Filtered after DESeq2, so padj is the full table's.
     raw_fa: "/data/human_transcriptome.fa"
     raw_gtf: "/data/human_transcriptome.gtf"
     tpm_table: "/data/transcript_tpm_short_read.csv"
+    gencode_gtf: "/data/gencode.v47.annotation.gtf"
   align:
     spike_in_transcriptome_fa: "/data/yeast_transcriptome.fa"
   references:

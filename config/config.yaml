@@ -32,6 +32,13 @@ collapse_transcriptome:
   raw_fa: "/path/to/raw_human_transcriptome.fa"
   raw_gtf: "/path/to/raw_human_transcriptome.gtf"
   tpm_table: "/path/to/transcript_tpm_short_read.csv"
+  # GENCODE's annotation, read only for its readthrough genes (dropped)
+  gencode_gtf: "/path/to/gencode.v47.annotation.gtf"
+  # then a CDS of which fewer than min_unique_fraction of the k-mers (k = kmer,
+  # about a footprint) are in no other CDS merges into the CDS it shares most
+  # with (paralogs; the cutoff: validation/reference_fix/)
+  kmer: 28
+  min_unique_fraction: 0.2
 
 # This block is passed as the `align:` module's own config (its own
 # config.yaml shape -- see wf-riboseq-align/config/config.yaml), minus
