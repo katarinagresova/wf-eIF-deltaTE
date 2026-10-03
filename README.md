@@ -11,6 +11,76 @@ Ribo-seq fastq -> [wf-riboseq-align](https://github.com/katarinagresova/wf-ribos
 salmon -> expression filter -> RNA-seq library correction; both -> DESeq2 deltaTE model ->
 master table. Both assays are counted on the same transcriptome, collapsed by coding sequence.
 
+```mermaid
+%%{init: {"themeVariables": {"fontSize": "20px"}, "flowchart": {"nodeSpacing": 30}}}%%
+flowchart TD
+    ribo[/"<b>Ribo-seq fastq</b>"/]
+    spike[/"spike-in transcriptome,<br>genome, GTF"/]
+    genome[/"human_genome_fa"/]
+    raw_tx[/"human transcriptome<br>(fa, GTF, TPM table),<br>GENCODE GTF"/]
+    rna[/"<b>RNA-seq fastq</b>"/]
+
+    collapse["<b>Reference</b><br>collapse_transcriptome"]
+    align["<b>Ribo-seq alignment</b><br>wf-riboseq-align module<br>(align_* rules)"]
+    salmon["<b>RNA-seq quantification</b><br>salmon_gentrome,<br>salmon_index, salmon_quant"]
+    filter["<b>Expression filter</b><br>filter_rnaseq,<br>filter_gtf, filter_quant"]
+    corr["<b>RNA-seq library<br>correction</b><br>rna_correction_*"]
+    ribokit["<b>Ribo-seq counts</b><br>ribokit_human_morfs,<br>ribokit_yeast_morfs"]
+    deltate["<b>deltaTE</b><br>deltate_inputs,<br>deltate_deseq2"]
+    master["<b>Master table</b><br>master_table,<br>master_table_filtered"]
+
+    deseq(["deltaTE/{experiment}/<br>deseq_res_*.tsv"])
+    mastercsv(["master/eif-master.csv,<br>eif-master.filtered.csv"])
+
+    %% Longer arrows (more dashes) keep every input on the top row.
+    raw_tx --> collapse
+    ribo ---> align
+    collapse -->|"collapsed fa"| align
+    spike ---> align
+    align --->|"human, spike-in<br>BAMs"| ribokit
+    spike ----> ribokit
+    collapse -->|"collapsed fa"| salmon
+    genome ---> salmon
+    rna ---> salmon
+    salmon -->|"quant.sf"| filter
+    collapse --->|"collapsed GTF"| filter
+    filter -->|"filtered GTF"| ribokit
+    genome ----> ribokit
+    filter -->|"filtered quants"| corr
+    ribokit -->|"CDS counts,<br>human + spike-in"| deltate
+    corr -->|"RNA quants"| deltate
+    deltate --> deseq
+    deltate -->|"DESeq2 tables"| master
+    ribokit --->|"ritpm"| master
+    corr --->|"TPM"| master
+    master --> mastercsv
+
+    classDef riboInput fill:#1f78b4,stroke:#0b3c5d,stroke-width:3px,color:#fff
+    classDef rnaInput fill:#33a02c,stroke:#1a5e1a,stroke-width:3px,color:#fff
+    classDef helper fill:#f4f4f4,stroke:#aaa,color:#555
+    classDef refStep fill:#ececec,stroke:#777,stroke-width:2px,color:#000
+    classDef riboStep fill:#d6e6f5,stroke:#1f78b4,stroke-width:2px,color:#000
+    classDef rnaStep fill:#dcefd9,stroke:#33a02c,stroke-width:2px,color:#000
+    classDef bothStep fill:#e7e0f0,stroke:#6a3d9a,stroke-width:2px,color:#000
+    class ribo riboInput
+    class rna rnaInput
+    class spike,raw_tx,genome helper
+    class collapse refStep
+    class align,ribokit riboStep
+    class salmon,filter,corr rnaStep
+    class deltate,master,deseq,mastercsv bothStep
+    linkStyle 1,4,14,18 stroke:#1f78b4,stroke-width:2.5px
+    linkStyle 8,9,13,15,19 stroke:#33a02c,stroke-width:2.5px
+    linkStyle 16,17,20 stroke:#6a3d9a,stroke-width:2.5px
+    linkStyle 0,2,3,5,6,7,10,11,12 stroke:#999
+```
+
+The bold inputs are the fastqs in `samples.csv`, the grey ones the references in `config.yaml`; square boxes are
+groups of rules (blue: Ribo-seq, green: RNA-seq, purple: both), rounded boxes the main outputs. Every step runs per
+experiment except the reference, the alignment and salmon indexes, and the master table (all experiments). Not shown:
+the contaminant set wf-riboseq-align ships, FastQC and MultiQC, and the collapsed reference that the library
+correction (transcript length and GC) and the master table (annotation) also read.
+
 The experiments, their conditions and their libraries are defined in the sample sheet,
 `config/samples.csv`: its `experiment` column splits the libraries into as many experiments as
 it names, and config `timepoints` selects which of them run (those at the timepoints listed).
