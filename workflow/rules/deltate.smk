@@ -1,18 +1,16 @@
-# The deltaTE model (Chotani et al. 2019), per experiment: DESeq2 on its
+# The deltaTE model (Chothani et al. 2019), per experiment: DESeq2 on its
 # Ribo-seq and RNA-seq libraries together, the change in translational
 # efficiency being the interaction of condition (config conditions: reference
-# -> treatment) and assay (RNA-seq -> Ribo-seq). Inputs: ribokit.smk's quants
-# (RIBOKIT_QUANT: human for the model, yeast for the spike-in size factors) and
-# rna_correction.smk's (RNA_CORRECTION_QUANT). Each library's assay and
-# condition come from samples.csv. The scripts read and write
-# results/deltaTE/<exp>/:
-#   sizeFactors_yeast_ribo.rds       calc_sizefactors.R: Ribo-seq size factors
-#                                    from the spike-in
-#   sampleTable.*, txi*              import_txAbundance.R: the libraries in one
-#                                    tximport object
-#   deseq_res_deltaTE_<norm>.*       run_deltaTE.R: the change in TE
-#   deseq_res_diff{ribo,total}_<norm>.*   run_deseq.R: each assay alone
-#   plots/MAplot_diff_*.pdf
+# -> treatment) and assay (RNA-seq -> Ribo-seq); each assay is also fitted
+# alone. Inputs: ribokit.smk's quants (RIBOKIT_QUANT: human for the model,
+# yeast for the spike-in size factors) and rna_correction.smk's
+# (RNA_CORRECTION_QUANT). Each library's assay and condition come from
+# samples.csv. In results/deltaTE/<exp>/:
+#   sampleTable.tsv, counts.tsv, length.tsv, spike_in_reads.tsv
+#                                deltate_inputs.py: the libraries as DESeq2's
+#                                input, the spike-in reads per Ribo-seq library
+#   deseq_res_<model>.tsv        deseq2.R: deltaTE_<norm> (the change in TE),
+#   plots/MAplot_diff_*.pdf      diffribo_<norm>, difftotal_autonorm
 # <norm>: yeastnorm, the Ribo-seq size factors from the spike-in; autonorm,
 # estimated within the Ribo-seq libraries (RNA-seq: autonorm only).
 
@@ -43,127 +41,64 @@ DELTATE_DIR = f"{RESULTS_DIR}/deltaTE"
 DELTATE_OUT = f"{DELTATE_DIR}/{{exp}}"
 DELTATE_CONSTRAINTS = dict(exp="|".join(map(re.escape, EXPERIMENT_NAMES)))
 DELTATE_LOG = f"{LOG_DIR}/deltaTE/{{exp}}"
+# deseq2.R's models: deseq_res_<model>.tsv, plots/MAplot_diff_<plot>.pdf
+DELTATE_MODELS = {"deltaTE_yeastnorm": "deltaTE_yeastnorm", "deltaTE_autonorm": "deltaTE_autonorm",
+                  "diffribo_yeastnorm": "ribo_yeastnorm", "diffribo_autonorm": "ribo_autonorm",
+                  "difftotal_autonorm": "total_autonorm"}
 
 
 def deltate_quants(path, read_type, **wildcards):
     """An experiment's quants of one read type, in samples.csv's order:
-    calc_sizefactors.R scales every Ribo-seq library to the first."""
+    deseq2.R scales every Ribo-seq library's spike-in to the first's."""
     return lambda wc: expand(path, exp=wc.exp, sample=samples_of(wc.exp, read_type), **wildcards)
 
 
-def deltate_results(kind, norms):
-    return [f"{DELTATE_OUT}/deseq_res_{kind}_{norm}.{ext}" for norm in norms for ext in ("tsv", "rds")]
+def deltate_libraries(wc, input):
+    """deltate_inputs.py's --ribo / --rna arguments: per library its sample id,
+    condition and quant(s)."""
+    args = [x for s, human, yeast in zip(samples_of(wc.exp, "ribo"), input.human, input.yeast)
+            for x in ("--ribo", s, SAMPLES.at[s, "condition"], human, yeast)]
+    args += [x for s, quant in zip(samples_of(wc.exp, "rna"), input.rna)
+             for x in ("--rna", s, SAMPLES.at[s, "condition"], quant)]
+    return " ".join(args)
 
 
-def deltate_plots(kind, norms):
-    return [f"{DELTATE_OUT}/plots/MAplot_diff_{kind}_{norm}.pdf" for norm in norms]
-
-
-rule deltate_calc_sizefactors:
+rule deltate_inputs:
     input:
+        human=deltate_quants(RIBOKIT_QUANT, "ribo", species="human"),
         yeast=deltate_quants(RIBOKIT_QUANT, "ribo", species="yeast"),
-        script=workflow.source_path("../scripts/calc_sizefactors.R"),
+        rna=deltate_quants(RNA_CORRECTION_QUANT, "rna"),
+        script=workflow.source_path("../scripts/deltate_inputs.py"),
     output:
-        f"{DELTATE_OUT}/sizeFactors_yeast_ribo.rds",
+        [f"{DELTATE_OUT}/{x}.tsv" for x in ("sampleTable", "counts", "length", "spike_in_reads")],
     wildcard_constraints:
         **DELTATE_CONSTRAINTS,
     params:
         dir=DELTATE_OUT,
-        samples=lambda wc: " ".join([str(len(samples_of(wc.exp, "ribo")))] + samples_of(wc.exp, "ribo")),
+        libraries=deltate_libraries,
     log:
-        f"{DELTATE_LOG}.calc_sizefactors.log",
+        f"{DELTATE_LOG}.inputs.log",
     conda:
-        "../envs/deseq2.yaml"
+        "../envs/python.yaml"
     shell:
-        "Rscript {input.script} {params.dir} {params.samples} {input.yeast} > {log} 2>&1"
+        "python {input.script} {params.dir} {params.libraries} > {log} 2>&1"
 
 
-rule deltate_import_txabundance:
+rule deltate_deseq2:
     input:
-        ribo=deltate_quants(RIBOKIT_QUANT, "ribo", species="human"),
-        rna=deltate_quants(RNA_CORRECTION_QUANT, "rna"),
-        script=workflow.source_path("../scripts/import_txAbundance.R"),
+        tables=rules.deltate_inputs.output,
+        script=workflow.source_path("../scripts/deseq2.R"),
     output:
-        sample_table=f"{DELTATE_OUT}/sampleTable.rds",
-        sample_table_tsv=f"{DELTATE_OUT}/sampleTable.tsv",
-        txi=f"{DELTATE_OUT}/txi.rds",
-        txi_tsv=[f"{DELTATE_OUT}/txi_{m}.tsv" for m in ("counts", "abundance", "length")],
+        results=[f"{DELTATE_OUT}/deseq_res_{model}.tsv" for model in DELTATE_MODELS],
+        plots=[f"{DELTATE_OUT}/plots/MAplot_diff_{plot}.pdf" for plot in DELTATE_MODELS.values()],
     wildcard_constraints:
         **DELTATE_CONSTRAINTS,
     params:
         dir=DELTATE_OUT,
         conditions=" ".join(DELTATE_CONDITIONS),
-        samples=lambda wc: " ".join([str(len(samples_of(wc.exp, "ribo"))), str(len(samples_of(wc.exp, "rna")))]
-                                    + samples_of(wc.exp, "ribo") + samples_of(wc.exp, "rna")),
-        sample_conditions=lambda wc: " ".join(SAMPLES.loc[samples_of(wc.exp, "ribo") + samples_of(wc.exp, "rna"),
-                                                          "condition"]),
     log:
-        f"{DELTATE_LOG}.import_txabundance.log",
+        f"{DELTATE_LOG}.deseq2.log",
     conda:
         "../envs/deseq2.yaml"
     shell:
-        "Rscript {input.script} {params.dir} {params.conditions} {params.samples} {params.sample_conditions} "
-        "{input.ribo} {input.rna} > {log} 2>&1"
-
-
-rule deltate_run_deltaTE:
-    input:
-        sample_table=rules.deltate_import_txabundance.output.sample_table,
-        txi=rules.deltate_import_txabundance.output.txi,
-        size_factors=rules.deltate_calc_sizefactors.output[0],
-        script=workflow.source_path("../scripts/run_deltaTE.R"),
-    output:
-        results=deltate_results("deltaTE", ("yeastnorm", "autonorm")),
-        size_factors=[f"{DELTATE_OUT}/sizeFactors_human_{x}.rds" for x in ("total", "ribo_auto")],
-        plots=deltate_plots("deltaTE", ("yeastnorm", "autonorm")),
-    wildcard_constraints:
-        **DELTATE_CONSTRAINTS,
-    params:
-        dir=DELTATE_OUT,
-    log:
-        f"{DELTATE_LOG}.run_deltaTE.log",
-    conda:
-        "../envs/deseq2.yaml"
-    shell:
-        "Rscript {input.script} {params.dir} > {log} 2>&1"
-
-
-rule deltate_run_deseq_total:
-    input:
-        sample_table=rules.deltate_import_txabundance.output.sample_table,
-        txi=rules.deltate_import_txabundance.output.txi,
-        script=workflow.source_path("../scripts/run_deseq.R"),
-    output:
-        results=deltate_results("difftotal", ("autonorm",)),
-        plots=deltate_plots("total", ("autonorm",)),
-    wildcard_constraints:
-        **DELTATE_CONSTRAINTS,
-    params:
-        dir=DELTATE_OUT,
-    log:
-        f"{DELTATE_LOG}.run_deseq_total.log",
-    conda:
-        "../envs/deseq2.yaml"
-    shell:
-        "Rscript {input.script} {params.dir} total > {log} 2>&1"
-
-
-rule deltate_run_deseq_ribo:
-    input:
-        sample_table=rules.deltate_import_txabundance.output.sample_table,
-        txi=rules.deltate_import_txabundance.output.txi,
-        size_factors=rules.deltate_calc_sizefactors.output[0],
-        script=workflow.source_path("../scripts/run_deseq.R"),
-    output:
-        results=deltate_results("diffribo", ("autonorm", "yeastnorm")),
-        plots=deltate_plots("ribo", ("autonorm", "yeastnorm")),
-    wildcard_constraints:
-        **DELTATE_CONSTRAINTS,
-    params:
-        dir=DELTATE_OUT,
-    log:
-        f"{DELTATE_LOG}.run_deseq_ribo.log",
-    conda:
-        "../envs/deseq2.yaml"
-    shell:
-        "Rscript {input.script} {params.dir} ribo > {log} 2>&1"
+        "Rscript {input.script} {params.dir} {params.conditions} > {log} 2>&1"

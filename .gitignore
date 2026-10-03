@@ -27,6 +27,9 @@ results/
 validation/
 resources/
 
+# The RiboStan arms + comparison report, kept runnable outside the pipeline
+legacy/
+
 # agents
 CLAUDE.md
 PLAN.md

@@ -93,7 +93,8 @@ the change in translational efficiency is the interaction. Fold changes are trea
 reference (config `conditions`). The Ribo-seq size factors come from the spike-in (`yeastnorm`)
 or are estimated within the libraries (`autonorm`), and go into the model together with the
 transcript lengths, as normalization factors. Each assay is also fitted alone.
-`results/deltaTE/<experiment>/` holds (as `.tsv` and `.rds`, MA plots in `plots/`):
+`results/deltaTE/<experiment>/` holds (as `.tsv`, MA plots in `plots/`; DESeq2's input in
+`counts.tsv`, `length.tsv`, `sampleTable.tsv`, `spike_in_reads.tsv`):
 
 | table | what |
 |---|---|
