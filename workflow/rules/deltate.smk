@@ -14,8 +14,6 @@
 # <norm>: yeastnorm, the Ribo-seq size factors from the spike-in; autonorm,
 # estimated within the Ribo-seq libraries (RNA-seq: autonorm only).
 
-import re
-
 # [reference, treatment]
 DELTATE_CONDITIONS = [config["conditions"]["reference"], config["conditions"]["treatment"]]
 
@@ -39,7 +37,6 @@ _check_samples(SAMPLES)
 
 DELTATE_DIR = f"{RESULTS_DIR}/deltaTE"
 DELTATE_OUT = f"{DELTATE_DIR}/{{exp}}"
-DELTATE_CONSTRAINTS = dict(exp="|".join(map(re.escape, EXPERIMENT_NAMES)))
 DELTATE_LOG = f"{LOG_DIR}/deltaTE/{{exp}}"
 # deseq2.R's models: deseq_res_<model>.tsv, plots/MAplot_diff_<plot>.pdf
 DELTATE_MODELS = {"deltaTE_yeastnorm": "deltaTE_yeastnorm", "deltaTE_autonorm": "deltaTE_autonorm",
@@ -72,7 +69,7 @@ rule deltate_inputs:
     output:
         [f"{DELTATE_OUT}/{x}.tsv" for x in ("sampleTable", "counts", "length", "spike_in_reads")],
     wildcard_constraints:
-        **DELTATE_CONSTRAINTS,
+        exp=EXPERIMENT_RE,
     params:
         dir=DELTATE_OUT,
         libraries=deltate_libraries,
@@ -92,7 +89,7 @@ rule deltate_deseq2:
         results=[f"{DELTATE_OUT}/deseq_res_{model}.tsv" for model in DELTATE_MODELS],
         plots=[f"{DELTATE_OUT}/plots/MAplot_diff_{plot}.pdf" for plot in DELTATE_MODELS.values()],
     wildcard_constraints:
-        **DELTATE_CONSTRAINTS,
+        exp=EXPERIMENT_RE,
     params:
         dir=DELTATE_OUT,
         conditions=" ".join(DELTATE_CONDITIONS),

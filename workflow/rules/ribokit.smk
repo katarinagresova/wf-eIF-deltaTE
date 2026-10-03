@@ -28,7 +28,7 @@ RIBOKIT_DIR = f"{RESULTS_DIR}/ribokit"
 RIBOKIT_OUT = f"{RIBOKIT_DIR}/{{exp}}/{{sample}}"
 RIBOKIT_QUANT = f"{RIBOKIT_OUT}.{{species}}.quant.tsv"
 RIBOKIT_CONSTRAINTS = dict(
-    exp="|".join(map(re.escape, EXPERIMENT_NAMES)),
+    exp=EXPERIMENT_RE,
     sample="|".join(map(re.escape, RIBO_SAMPLES)),
 )
 RIBOKIT_LOG = f"{LOG_DIR}/ribokit/{{exp}}/{{sample}}"

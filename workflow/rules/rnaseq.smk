@@ -2,10 +2,8 @@
 # (collapsed) human transcriptome, the genome as decoys, then the expression
 # filter (config autofilter:), whose blacklist is applied to what is counted:
 # the GTF ribokit reads and the quants the RNA-seq library correction reads.
-# These rules were wf-riboseq-align's (rnaseq.smk, autofilter.smk; `mode:
-# filtered`, up to 766b40a), behaviour unchanged; since 0473552 it aligns the
-# Ribo-seq only, to the whole transcriptome, so the blacklist no longer reaches
-# the alignment. The salmon index does not depend on the experiment:
+# The blacklist does not reach the Ribo-seq alignment (align.smk aligns to the
+# whole transcriptome). The salmon index does not depend on the experiment:
 # results/rnaseq/salmon_index/. In results/rnaseq/<exp>/:
 #   salmon/<sample>/                         salmon's output (quant.sf, its logs)
 #   salmon/<sample>/quant.rnaseq_filtered.sf quant.sf minus the blacklist (RNASEQ_QUANT)
@@ -23,7 +21,7 @@ RNASEQ_BLACKLIST = f"{RNASEQ_DIR}/{{exp}}/rnaseq_filter_blacklist_txid.txt"
 RNASEQ_GTF = f"{RNASEQ_DIR}/{{exp}}/human_transcriptome.rnaseq_filtered.gtf"
 RNASEQ_QUANT = f"{RNASEQ_DIR}/{{exp}}/salmon/{{sample}}/quant.rnaseq_filtered.sf"
 RNASEQ_CONSTRAINTS = dict(
-    exp="|".join(map(re.escape, EXPERIMENT_NAMES)),
+    exp=EXPERIMENT_RE,
     sample="|".join(map(re.escape, RNA_SAMPLES)),
 )
 

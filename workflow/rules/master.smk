@@ -1,14 +1,9 @@
 # The eIF master table (workflow/scripts/master_table.py), the table the
-# paper reads through wf-transmod-data (its HCT116_ISOFORMS_TE: logTE). Same
-# columns and row order as Frederick's results/20260324-eif-master.csv, built
-# from this workflow's deltaTE results and quants instead of his folders.
-#
-# Validated on his own 10 folders: same 158,284 rows, columns and row order as
-# 20260324-eif-master.csv, every column equal except log2FC_TE / padj_TE, by at
-# most 4e-5 / 3e-4 with identical hits in all 10 experiments. That is his own
-# 2026-07-16 rerun of the deltaTE tables (his folders now hold those), not the port.
+# paper reads through wf-transmod-data (its HCT116_ISOFORMS_TE: logTE), from
+# the deltaTE results and quants of every experiment run.
 
-# His notebook's experiment order (factors, then 4h before 8h); any other target after them
+# The experiments' order: these targets first, in this order, any other target
+# after them by name; within a target by timepoint
 MASTER_TARGET_ORDER = ["eIF4G1", "eIF4G2", "eIF4G3", "eIF4E", "eIF3d"]
 
 

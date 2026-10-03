@@ -6,6 +6,7 @@
 # and the master table (rules/master.smk).
 
 import os
+import re
 
 import pandas as pd
 
@@ -23,6 +24,8 @@ RNA_SAMPLES = list(SAMPLES.loc[SAMPLES["read_type"] == "rna", "sample_id"])
 if not set(config["timepoints"]) <= set(SAMPLES["timepoint"]):
     raise ValueError(f"config timepoints: {config['timepoints']}, samples.csv has {sorted(set(SAMPLES['timepoint']))}")
 EXPERIMENT_NAMES = sorted(set(SAMPLES.loc[SAMPLES["timepoint"].isin(config["timepoints"]), "experiment"]))
+# the {exp} wildcard's constraint
+EXPERIMENT_RE = "|".join(map(re.escape, EXPERIMENT_NAMES))
 
 
 def samples_of(exp, read_type):

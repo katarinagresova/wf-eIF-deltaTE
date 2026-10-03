@@ -43,11 +43,10 @@ once, in `results/align/`.
 
 ## RNA-seq: salmon and the expression filter
 
-`workflow/rules/rnaseq.smk`, per experiment (the rules were wf-riboseq-align's until it became
-Ribo-seq only, behaviour unchanged):
-- salmon 1.10.2 (the version of the original pipeline's container) quantifies each paired-end
-  library on its fastq files, by selective alignment (`-l A --seqBias --gcBias`), against an index
-  of the collapsed transcriptome with every sequence of the genome (config
+`workflow/rules/rnaseq.smk`, per experiment:
+- salmon 1.10.2 quantifies each paired-end library on its fastq files, by selective alignment
+  (`-l A --seqBias --gcBias`), against an index of the collapsed transcriptome with every
+  sequence of the genome (config
   `references: human_genome_fa`) as a decoy: a fragment that aligns better to the genome than to
   any transcript is counted for none. `--keepDuplicates`, so that a transcript whose sequence
   duplicates another's stays in `quant.sf`. salmon samples fragments for its bias models from a
@@ -87,7 +86,7 @@ commit pinned in `workflow/envs/ribokit.yaml`.
 
 ## deltaTE: DESeq2
 
-`workflow/rules/deltate.smk`, per experiment: the deltaTE model (Chotani et al. 2019), DESeq2 on
+`workflow/rules/deltate.smk`, per experiment: the deltaTE model (Chothani et al. 2019), DESeq2 on
 the Ribo-seq and RNA-seq libraries together with design `~ condition + assay + condition:assay`;
 the change in translational efficiency is the interaction. Fold changes are treatment over
 reference (config `conditions`). The Ribo-seq size factors come from the spike-in (`yeastnorm`)

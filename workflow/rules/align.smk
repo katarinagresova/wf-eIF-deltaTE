@@ -1,8 +1,8 @@
 # Import wf-riboseq-align once, for every experiment in samples.csv (its
-# `experiment` column, <target>_<timepoint>): it aligns the Ribo-seq only, each
-# experiment's outputs in results/align/<experiment>/. What does not depend on
-# the experiment (the Ribo-seq reference, the contaminant and transcriptome STAR
-# indexes) is built once, in results/align/. The RNA-seq: rnaseq.smk.
+# `experiment` column): it aligns the Ribo-seq only, each experiment's outputs
+# in results/align/<experiment>/. What does not depend on the experiment (the
+# Ribo-seq reference, the bowtie index of the transcriptome, spike-in and
+# contaminants) is built once, in results/align/. The RNA-seq: rnaseq.smk.
 
 from snakemake.io import sourcecache_entry
 
