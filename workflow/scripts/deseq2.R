@@ -11,6 +11,7 @@
 # the lengths row-centred, and the model gets size factor x row-centred length as normalization factors. The deltaTE
 # models get them as such (lengths row-centred over all libraries); diffribo_yeastnorm gets plain size factors (the
 # Ribo-seq length is the CDS's, the same in every Ribo-seq library).
+# results() tunes its independent filtering to alpha = 0.05, the padj cutoff of a hit (DESeq2's default: 0.1).
 # Rscript deseq2.R <dir> <reference> <treatment>
 # Reads <dir>/{sampleTable,counts,length,spike_in_reads}.tsv; writes <dir>/deseq_res_<model>.tsv and
 # <dir>/plots/MAplot_diff_{deltaTE,ribo,total}_<norm>.pdf.
@@ -47,9 +48,10 @@ dataset <- function(libs, design) {
   dds
 }
 centre <- function(len) len / exp(rowMeans(log(len)))
+alpha <- 0.05
 
 save <- function(res, model, plot) {
-  message(model, ": ", sum(res$padj < 0.05, na.rm = TRUE), " of ", nrow(res), " at padj < 0.05")
+  message(model, ": ", sum(res$padj < alpha, na.rm = TRUE), " of ", nrow(res), " at padj < ", alpha)
   write_tsv(data.frame(Name = rownames(res), as.data.frame(res)), file.path(dir, paste0("deseq_res_", model, ".tsv")))
   pdf(file.path(dir, "plots", paste0("MAplot_diff_", plot, ".pdf")), height = 6, width = 8)
   plotMA(res, ylim = c(-8, 8), colSig = "red")
@@ -68,11 +70,11 @@ for (norm in names(sf_ribo)) {
   sf <- c(sf_ribo[[norm]], sf_total)
   stopifnot(identical(names(sf), colnames(te)))
   normalizationFactors(te) <- sweep(centre(lengths), 2, sf, "*")
-  save(results(DESeq(te), name = te_coef), paste0("deltaTE_", norm), paste0("deltaTE_", norm))
+  save(results(DESeq(te), name = te_coef, alpha = alpha), paste0("deltaTE_", norm), paste0("deltaTE_", norm))
 }
 
-save(results(DESeq(dataset(total, ~ condition))), "difftotal_autonorm", "total_autonorm")
-save(results(DESeq(dataset(ribo, ~ condition))), "diffribo_autonorm", "ribo_autonorm")
+save(results(DESeq(dataset(total, ~ condition)), alpha = alpha), "difftotal_autonorm", "total_autonorm")
+save(results(DESeq(dataset(ribo, ~ condition)), alpha = alpha), "diffribo_autonorm", "ribo_autonorm")
 ribo_yeast <- dataset(ribo, ~ condition)
 sizeFactors(ribo_yeast) <- sf_ribo$yeastnorm
-save(results(DESeq(ribo_yeast)), "diffribo_yeastnorm", "ribo_yeastnorm")
+save(results(DESeq(ribo_yeast), alpha = alpha), "diffribo_yeastnorm", "ribo_yeastnorm")

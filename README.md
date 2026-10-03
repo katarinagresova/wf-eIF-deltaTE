@@ -91,8 +91,9 @@ the Ribo-seq and RNA-seq libraries together with design `~ condition + assay + c
 the change in translational efficiency is the interaction. Fold changes are treatment over
 reference (config `conditions`). The Ribo-seq size factors come from the spike-in (`yeastnorm`)
 or are estimated within the libraries (`autonorm`), and go into the model together with the
-transcript lengths, as normalization factors. Each assay is also fitted alone.
-`results/deltaTE/<experiment>/` holds (as `.tsv`, MA plots in `plots/`; DESeq2's input in
+transcript lengths, as normalization factors. Each assay is also fitted alone. DESeq2's
+independent filtering is tuned for hits at padj < 0.05 (`results(alpha = 0.05)`; its default is
+0.1). `results/deltaTE/<experiment>/` holds (as `.tsv`, MA plots in `plots/`; DESeq2's input in
 `counts.tsv`, `length.tsv`, `sampleTable.tsv`, `spike_in_reads.tsv`):
 
 | table | what |
