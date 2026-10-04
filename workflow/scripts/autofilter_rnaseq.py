@@ -1,8 +1,7 @@
 """Blacklist transcripts below an expression floor in the matched total RNA-seq.
 
-Port of autofilter_rnaseq.R (Frederick Korbel, eIF pipeline), same rule: keep
-a transcript if TPM >= min_tpm in >= min_samples libraries. Transcripts absent
-from a quant.sf count as TPM 0.
+A transcript is kept if TPM >= min_tpm in >= min_samples libraries.
+Transcripts absent from a quant.sf count as TPM 0.
 
 Usage: autofilter_rnaseq.py <transcriptome.fa> <blacklist_out> <min_tpm> <min_samples> <quant.sf>...
 """

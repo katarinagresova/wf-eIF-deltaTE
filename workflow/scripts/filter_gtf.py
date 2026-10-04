@@ -1,10 +1,8 @@
 """Drop blacklisted transcripts from a GTF.
 
-The GTF half of wf-riboseq-align's filter_transcriptome.py (port of
-make_resources_autofilter.sh, Frederick Korbel, eIF pipeline). Matches
-transcript ids EXACTLY: the original's `grep -F` is a substring match, which
-over-matches versioned ids (ENST...123.1 is inside ENST...123.10). GTF lines
-without a transcript_id (gene lines, comments) are kept.
+Matches transcript ids exactly (a substring match would over-match versioned
+ids: ENST...123.1 is inside ENST...123.10). GTF lines without a transcript_id
+(gene lines, comments) are kept.
 
 Usage: filter_gtf.py <gtf_in> <blacklist> <gtf_out>
 """

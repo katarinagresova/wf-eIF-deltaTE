@@ -19,9 +19,9 @@ Ribo-seq read, so clusters connected by that >=99% relation (either
 direction) collapse to one representative, same tie-break.
 
 A third pass then keeps one transcript per gene_id: any gene still holding
-more than one survivor collapses to one, same tie-break (Frederick's
-one-per-gene rule, applied after the CDS passes rather than instead of them,
-so a CDS shared across gene_ids is still resolved genome-wide first).
+more than one survivor collapses to one, same tie-break (after the CDS
+passes rather than instead of them, so a CDS shared across gene_ids is still
+resolved genome-wide first).
 
 A fourth pass then merges CDSs that share most of their sequence, across
 genes and loci (paralogs: SMN1/SMN2, EIF3C/EIF3CL): a CDS of which fewer than

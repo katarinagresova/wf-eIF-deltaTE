@@ -1,10 +1,8 @@
 """Drop blacklisted transcripts from a salmon quant.sf.
 
-The eIF pipeline's results/salmon/data_filtered/<sample>_quant.sf (Frederick Korbel): rows whose Name is in the
-blacklist are removed (exact match), the rest sorted by Name. Values are salmon's, copied as written: TPM is not
-renormalised over the kept rows, and the reads salmon gave the dropped transcripts are not redistributed. (His R
-rewrote the numbers with readr; numerically identical on all 6 eIF4E 4 h libraries, same 15,508 rows in the same
-order.)
+Rows whose Name is in the blacklist are removed (exact match), the rest sorted by Name. Values are salmon's, copied
+as written: TPM is not renormalised over the kept rows, and the reads salmon gave the dropped transcripts are not
+redistributed.
 
 Usage: filter_quant.py <quant.sf> <blacklist> <quant_out.sf>
 """
