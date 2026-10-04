@@ -57,6 +57,8 @@ rule all:
          if os.path.relpath(f, f"{RESULTS_DIR}/align").split("/")[0] in EXPERIMENT_NAMES],
         # the RNA-seq QC (salmon, FastQC)
         [f"{RNASEQ_DIR}/{exp}/multiqc/multiqc_report.html" for exp in EXPERIMENT_NAMES],
+        # the human Ribo-seq BAMs minus the RNA-seq blacklist, for tools other than this workflow's
+        [RNASEQ_RIBO_BAM.format(exp=exp, sample=s) for exp in EXPERIMENT_NAMES for s in samples_of(exp, "ribo")],
         # the corrected RNA-seq quantifications + what the correction did
         [f"{RNA_CORRECTION_DIR}/{exp}/factors.tsv" for exp in EXPERIMENT_NAMES],
         # the Ribo-seq quantifications

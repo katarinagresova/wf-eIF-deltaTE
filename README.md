@@ -128,11 +128,15 @@ once, in `results/align/`.
   collapsed GTF minus the blacklist, and the RNA-seq library correction, then DESeq2, read
   `quant.rnaseq_filtered.sf`: salmon's `quant.sf` minus the blacklisted rows, sorted by name, the
   values as salmon wrote them (TPM is not renormalised).
+- For tools other than this workflow's, a copy of each human Ribo-seq BAM without the blacklisted
+  transcripts: their `@SQ` lines and alignments removed, every other record as it was (FLAG, NH
+  and HI not updated, so a read can be left with secondary alignments only).
 
 The index is built once, in `results/rnaseq/salmon_index/`; `results/rnaseq/<experiment>/` holds
 `salmon/<sample>/` (salmon's output and `quant.rnaseq_filtered.sf`),
-`rnaseq_filter_blacklist_txid.txt`, `human_transcriptome.rnaseq_filtered.gtf`, FastQC of the raw
-fastq files (`fastqc/`) and a MultiQC report of salmon and FastQC (`multiqc/`).
+`rnaseq_filter_blacklist_txid.txt`, `human_transcriptome.rnaseq_filtered.gtf`,
+`ribo_bam/<ribo sample>.human.rnaseq_filtered.bam` (+ `.bai`), FastQC of the raw fastq files
+(`fastqc/`) and a MultiQC report of salmon and FastQC (`multiqc/`).
 
 ## RNA-seq library correction
 

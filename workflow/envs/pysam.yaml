@@ -1,0 +1,9 @@
+# Python with pysam, for the scripts that read or write BAMs (filter_bam.py).
+# Kept apart from python.yaml: a change there reruns every rule that uses it.
+name: pysam
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.14.7
+  - pysam=0.24.1

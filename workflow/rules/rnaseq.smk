@@ -2,13 +2,17 @@
 # (collapsed) human transcriptome, the genome as decoys, then the expression
 # filter (config autofilter:), whose blacklist is applied to what is counted:
 # the GTF ribokit reads and the quants the RNA-seq library correction reads.
-# The blacklist does not reach the Ribo-seq alignment (align.smk aligns to the
-# whole transcriptome). The salmon index does not depend on the experiment:
+# The Ribo-seq alignment does not use the blacklist (align.smk aligns to the
+# whole transcriptome); filter_ribo_bam writes a copy of the human BAMs
+# without the blacklisted transcripts, for tools other than this workflow's.
+# The salmon index does not depend on the experiment:
 # results/rnaseq/salmon_index/. In results/rnaseq/<exp>/:
 #   salmon/<sample>/                         salmon's output (quant.sf, its logs)
 #   salmon/<sample>/quant.rnaseq_filtered.sf quant.sf minus the blacklist (RNASEQ_QUANT)
 #   rnaseq_filter_blacklist_txid.txt         the transcripts below the floor
 #   human_transcriptome.rnaseq_filtered.gtf  the collapsed GTF minus them (RNASEQ_GTF)
+#   ribo_bam/<ribo sample>.human.rnaseq_filtered.bam(.bai)
+#                                            align.smk's human Ribo-seq BAM minus them (RNASEQ_RIBO_BAM)
 #   fastqc/<sample>_R{1,2}_fastqc.{html,zip}, multiqc/multiqc_report.html
 #                                            FastQC of the raw fastqs; MultiQC: salmon + FastQC
 
@@ -20,6 +24,7 @@ SALMON_INDEX_DIR = f"{RNASEQ_DIR}/salmon_index"
 RNASEQ_BLACKLIST = f"{RNASEQ_DIR}/{{exp}}/rnaseq_filter_blacklist_txid.txt"
 RNASEQ_GTF = f"{RNASEQ_DIR}/{{exp}}/human_transcriptome.rnaseq_filtered.gtf"
 RNASEQ_QUANT = f"{RNASEQ_DIR}/{{exp}}/salmon/{{sample}}/quant.rnaseq_filtered.sf"
+RNASEQ_RIBO_BAM = f"{RNASEQ_DIR}/{{exp}}/ribo_bam/{{sample}}.human.rnaseq_filtered.bam"
 RNASEQ_CONSTRAINTS = dict(
     exp=EXPERIMENT_RE,
     sample="|".join(map(re.escape, RNA_SAMPLES)),
@@ -153,6 +158,29 @@ rule filter_quant:
         "../envs/python.yaml"
     shell:
         "python {input.script} {input.quant} {input.blacklist} {output} 2> {log}"
+
+
+# The Ribo-seq alignments on the same transcripts, for tools other than this
+# workflow's (ribokit quant already drops what is not in RNASEQ_GTF): the human
+# split BAM minus the blacklisted transcripts (filter_bam.py says what is and
+# is not changed).
+rule filter_ribo_bam:
+    input:
+        bam=f"{ALIGN_DIR}/split_bam/transcriptome/human/{{sample}}.bam",
+        blacklist=RNASEQ_BLACKLIST,
+        script=workflow.source_path("../scripts/filter_bam.py"),
+    output:
+        bam=RNASEQ_RIBO_BAM,
+        bai=f"{RNASEQ_RIBO_BAM}.bai",
+    wildcard_constraints:
+        exp=RNASEQ_CONSTRAINTS["exp"],
+        sample="|".join(map(re.escape, RIBO_SAMPLES)),
+    log:
+        f"{RNASEQ_LOG}/{{exp}}/filter_ribo_bam/{{sample}}.log",
+    conda:
+        "../envs/pysam.yaml"
+    shell:
+        "python {input.script} {input.bam} {input.blacklist} {output.bam} 2> {log}"
 
 
 # FastQC of the raw RNA-seq, R1 and R2. Reports only; no rule but MultiQC reads
