@@ -1,0 +1,11 @@
+# cutadapt has no Python 3.14 build (bioconda or PyPI wheel) yet, so 3.13.
+# 5.2 trims identically to 4.4, the eIF pipeline's version, with this
+# workflow's parameters.
+name: cutadapt
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - cutadapt=5.2
+  - python=3.13.15
+  - gzip=1.14

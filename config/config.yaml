@@ -55,6 +55,16 @@ align:
   spike_in_transcriptome_fa: "/path/to/yeast_transcriptome.fa"
   min_spike_in_fraction: 0.01
 
+# RNA-seq adapter trimming (workflow/rules/rnaseq.smk, cutadapt_rna), before
+# salmon: the 3' ends of both mates are quality-trimmed (`qualcutoff`, as the
+# Ribo-seq's) and `adapter` is cut (AGATCGGAAGAGC: the start of both TruSeq
+# adapters; >= 6 nt of it); a pair with a mate shorter than `minlength` after
+# trimming is dropped (35: the shortest read in the fastqs that came trimmed).
+rnaseq_trim:
+  adapter: "AGATCGGAAGAGC"
+  minlength: 35
+  qualcutoff: 20
+
 # The RNA-seq expression filter (workflow/rules/rnaseq.smk), per experiment: a
 # transcript is kept if salmon's TPM >= min_tpm in >= min_samples of the
 # experiment's RNA-seq libraries, else blacklisted. The blacklist is applied

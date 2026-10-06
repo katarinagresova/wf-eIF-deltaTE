@@ -1,8 +1,22 @@
-# MultiQC config for rule multiqc_rnaseq (rules/rnaseq.smk): salmon, then the
-# raw RNA-seq FastQC (<sample>_R1, <sample>_R2).
+# MultiQC config for rule multiqc_rnaseq (rules/rnaseq.smk): cutadapt, salmon,
+# then the RNA-seq FastQC (<sample>_R1, <sample>_R2), raw and trimmed. Both
+# FastQCs report the same sample names, so each gets its own section, selected
+# by path.
 no_version_check: true
+# cutadapt: name after its log (<sample>.log), not after the fastq it read
+use_filename_as_sample_name:
+  - cutadapt
 module_order:
+  - cutadapt
   - salmon
   - fastqc:
       name: "FastQC: raw RNA-seq"
       anchor: fastqc_rna_raw
+      path_filters:
+        - "*/fastqc/*"
+  - fastqc:
+      name: "FastQC: trimmed RNA-seq"
+      anchor: fastqc_rna_trimmed
+      info: "What salmon reads: adapter-trimmed by cutadapt_rna."
+      path_filters:
+        - "*/fastqc_trimmed/*"

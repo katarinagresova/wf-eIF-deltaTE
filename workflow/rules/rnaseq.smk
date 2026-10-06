@@ -1,4 +1,5 @@
-# The matched total RNA-seq (paired-end), per experiment: salmon on the whole
+# The matched total RNA-seq (paired-end), per experiment: adapter trimming
+# (config rnaseq_trim:), salmon on the whole
 # (collapsed) human transcriptome, the genome as decoys, then the expression
 # filter (config autofilter:), whose blacklist is applied to what is counted:
 # the GTF ribokit reads and the quants the RNA-seq library correction reads.
@@ -13,8 +14,11 @@
 #   human_transcriptome.rnaseq_filtered.gtf  the collapsed GTF minus them (RNASEQ_GTF)
 #   ribo_bam/<ribo sample>.human.rnaseq_filtered.bam(.bai)
 #                                            align.smk's human Ribo-seq BAM minus them (RNASEQ_RIBO_BAM)
-#   fastqc/<sample>_R{1,2}_fastqc.{html,zip}, multiqc/multiqc_report.html
-#                                            FastQC of the raw fastqs; MultiQC: salmon + FastQC
+#   trimmed/<sample>_R{1,2}.fastq.gz         the adapter-trimmed fastqs (temp)
+#   fastqc/<sample>_R{1,2}_fastqc.{html,zip} FastQC of the raw fastqs
+#   fastqc_trimmed/<sample>_R{1,2}_fastqc.{html,zip}
+#                                            FastQC of the trimmed fastqs
+#   multiqc/multiqc_report.html              MultiQC: cutadapt, salmon, both FastQCs
 
 import re
 
@@ -80,10 +84,43 @@ rule salmon_index:
         "-i {output} > {log} 2>&1"
 
 
-rule salmon_quant:
+# eIF3d's fastqs come untrimmed (1-5% of reads reach the adapter), the other
+# targets' trimmed. Every library is trimmed the same way here.
+# envs/cutadapt.yaml is wf-riboseq-align's at ALIGN_COMMIT byte for byte, so
+# the align module's built env is reused.
+rule cutadapt_rna:
     input:
         fastq1=lambda wc: SAMPLES.loc[wc.sample, "fastq_1"],
         fastq2=lambda wc: SAMPLES.loc[wc.sample, "fastq_2"],
+    output:
+        fastq1=temp(f"{RNASEQ_DIR}/{{exp}}/trimmed/{{sample}}_R1.fastq.gz"),
+        fastq2=temp(f"{RNASEQ_DIR}/{{exp}}/trimmed/{{sample}}_R2.fastq.gz"),
+    wildcard_constraints:
+        **RNASEQ_CONSTRAINTS,
+    params:
+        adapter=config["rnaseq_trim"]["adapter"],
+        minlength=config["rnaseq_trim"]["minlength"],
+        qualcutoff=config["rnaseq_trim"]["qualcutoff"],
+    log:
+        f"{RNASEQ_LOG}/{{exp}}/cutadapt/{{sample}}.log",
+    conda:
+        "../envs/cutadapt.yaml"
+    threads: 4
+    shell:
+        # -O 6 (as wf-riboseq-align's cutadapt_reads): default -O 3 lets a 3 nt
+        # chance match to the adapter trim real insert bases off the 3' end;
+        # -O 6 is long enough to be a real adapter. -O and the quality cutoff
+        # apply to both mates.
+        "cutadapt --cores {threads} -a {params.adapter} -A {params.adapter} -O 6 "
+        "--minimum-length {params.minlength} --quality-cutoff {params.qualcutoff} "
+        "-o {output.fastq1} -p {output.fastq2} "
+        "{input.fastq1} {input.fastq2} > {log} 2>&1"
+
+
+rule salmon_quant:
+    input:
+        fastq1=f"{RNASEQ_DIR}/{{exp}}/trimmed/{{sample}}_R1.fastq.gz",
+        fastq2=f"{RNASEQ_DIR}/{{exp}}/trimmed/{{sample}}_R2.fastq.gz",
         index=f"{SALMON_INDEX_DIR}/transcriptome_genome_decoys",
     output:
         f"{RNASEQ_DIR}/{{exp}}/salmon/{{sample}}/quant.sf",
@@ -214,12 +251,40 @@ rule fastqc_rna_raw:
         "rm -rf {params.tmp}"
 
 
-# One MultiQC report per experiment: salmon and the RNA-seq FastQC. The
-# Ribo-seq's is align.smk's (results/align/<exp>/multiqc/).
+# FastQC of the trimmed RNA-seq, what salmon reads. The trimmed fastqs are
+# already named <sample>_R<mate>.fastq.gz, so no link; the tmp dir is
+# FastQC's --dir only.
+rule fastqc_rna_trimmed:
+    input:
+        fastq=f"{RNASEQ_DIR}/{{exp}}/trimmed/{{sample}}_R{{mate}}.fastq.gz",
+    output:
+        html=f"{RNASEQ_DIR}/{{exp}}/fastqc_trimmed/{{sample}}_R{{mate}}_fastqc.html",
+        zip=f"{RNASEQ_DIR}/{{exp}}/fastqc_trimmed/{{sample}}_R{{mate}}_fastqc.zip",
+    wildcard_constraints:
+        mate="[12]",
+        **RNASEQ_CONSTRAINTS,
+    params:
+        tmp=f"{RNASEQ_DIR}/{{exp}}/fastqc_trimmed/{{sample}}_R{{mate}}_tmp",
+    log:
+        f"{RNASEQ_LOG}/{{exp}}/fastqc_trimmed/{{sample}}_R{{mate}}.log",
+    conda:
+        "../envs/fastqc.yaml"
+    shell:
+        "rm -rf {params.tmp} && mkdir -p {params.tmp} && "
+        "fastqc --quiet --threads 1 --dir {params.tmp} --outdir $(dirname {output.html}) "
+        "{input.fastq} > {log} 2>&1 && "
+        "rm -rf {params.tmp}"
+
+
+# One MultiQC report per experiment: cutadapt, salmon and the RNA-seq FastQC,
+# raw and trimmed (sections and sample names: workflow/multiqc_rnaseq.yaml).
+# The Ribo-seq's is align.smk's (results/align/<exp>/multiqc/).
 rule multiqc_rnaseq:
     input:
-        fastqc=lambda wc: [f"{RNASEQ_DIR}/{wc.exp}/fastqc/{s}_R{mate}_fastqc.zip"
+        fastqc=lambda wc: [f"{RNASEQ_DIR}/{wc.exp}/{d}/{s}_R{mate}_fastqc.zip"
+                           for d in ("fastqc", "fastqc_trimmed")
                            for s in samples_of(wc.exp, "rna") for mate in (1, 2)],
+        cutadapt=_rnaseq_files(f"{RNASEQ_LOG}/{{exp}}/cutadapt/{{sample}}.log"),
         salmon=_rnaseq_files(f"{RNASEQ_DIR}/{{exp}}/salmon/{{sample}}/quant.sf"),
         config=workflow.source_path("../multiqc_rnaseq.yaml"),
     output:
@@ -236,4 +301,4 @@ rule multiqc_rnaseq:
         "../envs/multiqc.yaml"
     shell:
         "multiqc --force --config {input.config} --outdir $(dirname {output.html}) "
-        "{input.fastqc} {params.salmon_dirs} > {log} 2>&1"
+        "{input.fastqc} {input.cutadapt} {params.salmon_dirs} > {log} 2>&1"

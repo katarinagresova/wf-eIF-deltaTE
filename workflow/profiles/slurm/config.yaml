@@ -38,6 +38,8 @@ set-resources:
   align_bowtie_align:
     cpus_per_task: 8
   # rnaseq.smk: the rules' threads, their mem_mb is in the rules
+  cutadapt_rna:
+    cpus_per_task: 4
   salmon_index:
     cpus_per_task: 16
   salmon_quant:

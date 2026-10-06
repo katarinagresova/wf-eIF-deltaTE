@@ -8,7 +8,7 @@ which their size factors can be taken.
 Ribo-seq fastq -> [wf-riboseq-align](https://github.com/katarinagresova/wf-riboseq-align)
 (trimming, contaminant filter, bowtie), imported as a Snakemake module ->
 [ribokit](https://github.com/katarinagresova/ribokit) (Ribo-seq reads per CDS); RNA-seq fastq ->
-salmon -> expression filter -> RNA-seq library correction; both -> DESeq2 deltaTE model ->
+adapter trimming -> salmon -> expression filter -> RNA-seq library correction; both -> DESeq2 deltaTE model ->
 master table. Both assays are counted on the same transcriptome, collapsed by coding sequence.
 
 ```mermaid
@@ -22,7 +22,7 @@ flowchart TD
 
     collapse["<b>Reference</b><br>collapse_transcriptome"]
     align["<b>Ribo-seq alignment</b><br>wf-riboseq-align module<br>(align_* rules)"]
-    salmon["<b>RNA-seq quantification</b><br>salmon_gentrome,<br>salmon_index, salmon_quant"]
+    salmon["<b>RNA-seq quantification</b><br>cutadapt_rna, salmon_gentrome,<br>salmon_index, salmon_quant"]
     filter["<b>Expression filter</b><br>filter_rnaseq,<br>filter_gtf, filter_quant"]
     corr["<b>RNA-seq library<br>correction</b><br>rna_correction_*"]
     ribokit["<b>Ribo-seq counts</b><br>ribokit_human_morfs,<br>ribokit_yeast_morfs"]
@@ -114,7 +114,10 @@ once, in `results/align/`.
 ## RNA-seq: salmon and the expression filter
 
 `workflow/rules/rnaseq.smk`, per experiment:
-- salmon 1.10.2 quantifies each paired-end library on its fastq files, by selective alignment
+- cutadapt trims the 3' end of both mates: bases below quality `qualcutoff` (20), then the
+  adapter (config `rnaseq_trim`: `adapter`, the start of both TruSeq adapters; a match of at
+  least 6 nt); a pair with a mate shorter than `minlength` (35) is dropped.
+- salmon 1.10.2 quantifies each paired-end library on its trimmed fastq files, by selective alignment
   (`-l A --seqBias --gcBias`), against an index of the collapsed transcriptome with every
   sequence of the genome (config
   `references: human_genome_fa`) as a decoy: a fragment that aligns better to the genome than to
@@ -135,8 +138,9 @@ once, in `results/align/`.
 The index is built once, in `results/rnaseq/salmon_index/`; `results/rnaseq/<experiment>/` holds
 `salmon/<sample>/` (salmon's output and `quant.rnaseq_filtered.sf`),
 `rnaseq_filter_blacklist_txid.txt`, `human_transcriptome.rnaseq_filtered.gtf`,
-`ribo_bam/<ribo sample>.human.rnaseq_filtered.bam` (+ `.bai`), FastQC of the raw fastq files
-(`fastqc/`) and a MultiQC report of salmon and FastQC (`multiqc/`).
+`ribo_bam/<ribo sample>.human.rnaseq_filtered.bam` (+ `.bai`), FastQC of the raw and the
+trimmed fastq files (`fastqc/`, `fastqc_trimmed/`) and a MultiQC report of cutadapt, salmon and
+both FastQCs (`multiqc/`). The trimmed fastq files are deleted once salmon and FastQC have read them.
 
 ## RNA-seq library correction
 
