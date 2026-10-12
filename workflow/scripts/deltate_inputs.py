@@ -4,8 +4,7 @@ The Ribo-seq and RNA-seq libraries as two transcript x library matrices, Ribo-se
 (type "salmon", txOut, countsFromAbundance "no") would give them: counts = NumReads, length = EffectiveLength. The rows
 are the RNA-seq quants' transcripts (every RNA-seq quant has the same), sorted by Name; a transcript the Ribo-seq quants
 lack (no CDS: the Ribo-seq is counted on CDSs) is NA in their columns, and a missing NumReads counts 0. Per Ribo-seq
-library its spike-in reads (deseq2.R's spike-in size factors are each library's over the first's, so the order of the
---ribo libraries matters).
+library its spike-in reads.
 
 Usage: deltate_inputs.py <dir> --ribo <sample> <condition> <human quant> <spike-in quant> ...
                                --rna <sample> <condition> <quant> ...

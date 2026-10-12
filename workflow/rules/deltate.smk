@@ -49,8 +49,7 @@ DELTATE_MODELS = {"deltaTE_yeastnorm": "deltaTE_yeastnorm", "deltaTE_autonorm": 
 
 
 def deltate_quants(path, read_type, **wildcards):
-    """An experiment's quants of one read type, in samples.csv's order:
-    deseq2.R scales every Ribo-seq library's spike-in to the first's."""
+    """An experiment's quants of one read type, in samples.csv's order."""
     return lambda wc: expand(path, exp=wc.exp, sample=samples_of(wc.exp, read_type), **wildcards)
 
 

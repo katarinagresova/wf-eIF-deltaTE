@@ -213,8 +213,6 @@ histone mRNAs). Filtered after DESeq2, so padj is the full table's.
   goes into the master table; one without (e.g. a harringtonine experiment with `plusAux`
   libraries only) is aligned and quantified only: up to the RNA-seq library correction and
   ribokit.
-- Row order matters: the spike-in size factors scale every Ribo-seq library to the experiment's
-  first Ribo-seq row.
 
 ## Setup
 

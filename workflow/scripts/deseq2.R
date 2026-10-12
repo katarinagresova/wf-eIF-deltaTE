@@ -4,9 +4,9 @@
 #                        ~ condition + assay + condition:assay, the coefficient condition<treatment>:assayribo
 #   diffribo_<norm>      the Ribo-seq alone, design ~ condition
 #   difftotal_autonorm   the RNA-seq alone, design ~ condition
-# <norm> is how the Ribo-seq size factors are set: yeastnorm, from the spike-in (each library's spike-in reads over the
-# first Ribo-seq library's); autonorm, estimated within the Ribo-seq libraries. The RNA-seq ones are always estimated
-# within the RNA-seq libraries.
+# <norm> is how the Ribo-seq size factors are set: yeastnorm, from the spike-in (each library's spike-in reads over
+# their geometric mean, as DESeq2 centres its own size factors); autonorm, estimated within the Ribo-seq libraries. The
+# RNA-seq ones are always estimated within the RNA-seq libraries.
 # Estimated within an assay = as estimateSizeFactors() does for tximport input: median of ratios on counts / length,
 # the lengths row-centred, and the model gets size factor x row-centred length as normalization factors. The Ribo-seq
 # length is the CDS's, the same in every Ribo-seq library: it changes no fold change, only baseMean (the dispersion
@@ -65,7 +65,7 @@ save <- function(res, model, plot) {
 dir.create(file.path(dir, "plots"), showWarnings = FALSE)
 
 sf_total <- estimateSizeFactorsForMatrix(counts[, total] / centre(lengths[, total]))
-sf_ribo <- list(yeastnorm = setNames(spike_in$reads / spike_in$reads[1], spike_in$sampleName),
+sf_ribo <- list(yeastnorm = setNames(spike_in$reads / exp(mean(log(spike_in$reads))), spike_in$sampleName),
                 autonorm = estimateSizeFactorsForMatrix(counts[cds, ribo] / centre(lengths[cds, ribo])))
 print(list(total = sf_total, ribo = sf_ribo))
 
