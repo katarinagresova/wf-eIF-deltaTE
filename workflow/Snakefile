@@ -64,9 +64,10 @@ rule all:
         # the Ribo-seq quantifications
         [f"{RIBOKIT_DIR}/{exp}/{s}.{species}.quant.tsv"
          for exp in EXPERIMENT_NAMES for s in samples_of(exp, "ribo") for species in ("human", "yeast")],
-        # the deltaTE model + DESeq2 per assay
+        # the deltaTE model + DESeq2 per assay: the experiments with both
+        # conditions in both assays only (deltate.smk)
         [f"{DELTATE_DIR}/{exp}/deseq_res_{kind}.tsv"
-         for exp in EXPERIMENT_NAMES
+         for exp in DELTATE_EXPERIMENTS
          for kind in ("deltaTE_yeastnorm", "deltaTE_autonorm", "diffribo_yeastnorm", "diffribo_autonorm",
                       "difftotal_autonorm")],
         # the master table, full and filtered

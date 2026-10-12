@@ -1,6 +1,7 @@
 # The eIF master table (workflow/scripts/master_table.py), the table the
 # paper reads through wf-transmod-data (its HCT116_ISOFORMS_TE: logTE), from
-# the deltaTE results and quants of every experiment run.
+# the deltaTE results and quants of every experiment run with a deltaTE model
+# (DELTATE_EXPERIMENTS, deltate.smk).
 
 # The experiments' order: these targets first, in this order, any other target
 # after them by name; within a target by timepoint
@@ -12,7 +13,7 @@ def master_experiments():
         target, timepoint = SAMPLES.loc[SAMPLES["experiment"] == exp, ["target", "timepoint"]].iloc[0]
         rank = MASTER_TARGET_ORDER.index(target) if target in MASTER_TARGET_ORDER else len(MASTER_TARGET_ORDER)
         return rank, target, timepoint
-    return sorted(EXPERIMENT_NAMES, key=key)
+    return sorted(DELTATE_EXPERIMENTS, key=key)
 
 
 def master_tables(exp):

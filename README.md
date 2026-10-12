@@ -164,7 +164,8 @@ commit pinned in `workflow/envs/ribokit.yaml`.
 
 ## deltaTE: DESeq2
 
-`workflow/rules/deltate.smk`, per experiment: the deltaTE model (Chothani et al. 2019), DESeq2 on
+`workflow/rules/deltate.smk`, per experiment with both conditions in both assays (the others
+stop after the steps above): the deltaTE model (Chothani et al. 2019), DESeq2 on
 the Ribo-seq and RNA-seq libraries together with design `~ condition + assay + condition:assay`;
 the change in translational efficiency is the interaction. Fold changes are treatment over
 reference (config `conditions`). The Ribo-seq size factors come from the spike-in (`yeastnorm`)
@@ -184,7 +185,8 @@ independent filtering is tuned for hits at padj < 0.05 (`results(alpha = 0.05)`;
 
 ## Master table
 
-`workflow/rules/master.smk` -> `results/master/eif-master.csv`: all experiments run, per
+`workflow/rules/master.smk` -> `results/master/eif-master.csv`: all experiments run with a
+deltaTE model, per
 transcript: log2FC and padj of TE (`deltaTE_yeastnorm`), RPF (`diffribo_yeastnorm`) and RNA
 (`difftotal_autonorm`; a transcript without a CDS has RNA only), the TPM of every library
 (ribokit's ritpm, salmon's TPM), log2TE per replicate, and the transcript annotation from the
@@ -204,8 +206,11 @@ histone mRNAs). Filtered after DESeq2, so padj is the full table's.
 `experiment`.
 - Experiment names are free (e.g. `<target>_<timepoint>`); nothing parses them, nor the sample
   ids. Assay, condition, target and timepoint come from their columns.
-- Every experiment run needs both conditions of config `conditions`, and no other, in its
-  Ribo-seq and in its RNA-seq libraries (checked when the workflow starts).
+- `condition` is one of the two of config `conditions` (checked when the workflow starts). An
+  experiment with both in its Ribo-seq and in its RNA-seq libraries gets the deltaTE model and
+  goes into the master table; one without (e.g. a harringtonine experiment with `plusAux`
+  libraries only) is aligned and quantified only: up to the RNA-seq library correction and
+  ribokit.
 - Row order matters: the spike-in size factors scale every Ribo-seq library to the experiment's
   first Ribo-seq row.
 

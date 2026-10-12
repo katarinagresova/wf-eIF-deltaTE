@@ -18,21 +18,25 @@
 DELTATE_CONDITIONS = [config["conditions"]["reference"], config["conditions"]["treatment"]]
 
 
-def _check_samples(samples):
-    """Every experiment run has exactly the two conditions in both assays. The
-    scripts take each library's assay and condition from samples.csv, never
-    from its name (wf-riboseq-align checks read_type and sample_id)."""
-    errors = []
-    for exp, sub in samples[samples["experiment"].isin(EXPERIMENT_NAMES)].groupby("experiment"):
-        for read_type in ("ribo", "rna"):
-            conds = set(sub.loc[sub["read_type"] == read_type, "condition"])
-            if conds != set(DELTATE_CONDITIONS):
-                errors.append(f"{exp}: {read_type} has conditions {sorted(conds)}, needs {DELTATE_CONDITIONS}")
-    if errors:
-        raise ValueError(f"{config['samples']}:\n  " + "\n  ".join(errors))
+def _deltate_experiments(samples):
+    """The experiments run with both conditions in both assays: only these get
+    the deltaTE model (and a place in the master table); the others (e.g. the
+    harringtonine experiments with plusAux only) are aligned and quantified
+    only. A condition other than the two is an error. The scripts take each
+    library's assay and condition from samples.csv, never from its name
+    (wf-riboseq-align checks read_type and sample_id)."""
+    run = samples[samples["experiment"].isin(EXPERIMENT_NAMES)]
+    other = sorted(set(run["condition"]) - set(DELTATE_CONDITIONS))
+    if other:
+        raise ValueError(f"{config['samples']}: conditions {other}, config conditions are {DELTATE_CONDITIONS}")
+    return [exp for exp in EXPERIMENT_NAMES
+            if all(set(run.loc[(run["experiment"] == exp) & (run["read_type"] == t), "condition"])
+                   == set(DELTATE_CONDITIONS) for t in ("ribo", "rna"))]
 
 
-_check_samples(SAMPLES)
+DELTATE_EXPERIMENTS = _deltate_experiments(SAMPLES)
+# the deltaTE rules' {exp} constraint
+DELTATE_RE = "|".join(map(re.escape, DELTATE_EXPERIMENTS))
 
 
 DELTATE_DIR = f"{RESULTS_DIR}/deltaTE"
@@ -69,7 +73,7 @@ rule deltate_inputs:
     output:
         [f"{DELTATE_OUT}/{x}.tsv" for x in ("sampleTable", "counts", "length", "spike_in_reads")],
     wildcard_constraints:
-        exp=EXPERIMENT_RE,
+        exp=DELTATE_RE,
     params:
         dir=DELTATE_OUT,
         libraries=deltate_libraries,
@@ -89,7 +93,7 @@ rule deltate_deseq2:
         results=[f"{DELTATE_OUT}/deseq_res_{model}.tsv" for model in DELTATE_MODELS],
         plots=[f"{DELTATE_OUT}/plots/MAplot_diff_{plot}.pdf" for plot in DELTATE_MODELS.values()],
     wildcard_constraints:
-        exp=EXPERIMENT_RE,
+        exp=DELTATE_RE,
     params:
         dir=DELTATE_OUT,
         conditions=" ".join(DELTATE_CONDITIONS),
