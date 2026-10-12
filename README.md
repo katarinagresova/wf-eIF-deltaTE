@@ -169,8 +169,10 @@ stop after the steps above): the deltaTE model (Chothani et al. 2019), DESeq2 on
 the Ribo-seq and RNA-seq libraries together with design `~ condition + assay + condition:assay`;
 the change in translational efficiency is the interaction. Fold changes are treatment over
 reference (config `conditions`). The Ribo-seq size factors come from the spike-in (`yeastnorm`)
-or are estimated within the libraries (`autonorm`), and go into the model together with the
-transcript lengths, as normalization factors. Each assay is also fitted alone. ribokit counts
+or are estimated within the libraries (`autonorm`). The RNA-seq size factors go into the model
+together with salmon's effective transcript lengths, as normalization factors; the Ribo-seq ones
+alone (the Ribo-seq is counted on the CDS, whose length is the same in every Ribo-seq library).
+Each assay is also fitted alone. ribokit counts
 the Ribo-seq on CDSs, so the deltaTE and Ribo-seq models are fitted on the transcripts with a
 CDS; the RNA-seq model and the RNA-seq size factors on every transcript. DESeq2's
 independent filtering is tuned for hits at padj < 0.05 (`results(alpha = 0.05)`; its default is

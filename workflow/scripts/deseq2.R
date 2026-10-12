@@ -8,9 +8,10 @@
 # first Ribo-seq library's); autonorm, estimated within the Ribo-seq libraries. The RNA-seq ones are always estimated
 # within the RNA-seq libraries.
 # Estimated within an assay = as estimateSizeFactors() does for tximport input: median of ratios on counts / length,
-# the lengths row-centred, and the model gets size factor x row-centred length as normalization factors. The deltaTE
-# models get them as such (lengths row-centred over all libraries); diffribo_yeastnorm gets plain size factors (the
-# Ribo-seq length is the CDS's, the same in every Ribo-seq library).
+# the lengths row-centred, and the model gets size factor x row-centred length as normalization factors. The Ribo-seq
+# length is the CDS's, the same in every Ribo-seq library: it changes no fold change, only baseMean (the dispersion
+# trend, independent filtering). So the Ribo-seq libraries get plain size factors (diffribo_yeastnorm; the deltaTE
+# models), and the deltaTE models normalise each assay as its own model does (validation/ribo_nolength/).
 # The Ribo-seq is counted on CDSs (a transcript without one is NA in its columns): the deltaTE and Ribo-seq models are
 # fitted on the transcripts with a CDS, the RNA-seq model and size factors on every transcript.
 # results() tunes its independent filtering to alpha = 0.05, the padj cutoff of a hit (DESeq2's default: 0.1).
@@ -73,7 +74,9 @@ te_coef <- make.names(paste0("condition", conditions[2], ":assayribo"))
 for (norm in names(sf_ribo)) {
   sf <- c(sf_ribo[[norm]], sf_total)
   stopifnot(identical(names(sf), colnames(te)))
-  normalizationFactors(te) <- sweep(centre(lengths[cds, ]), 2, sf, "*")
+  nf <- cbind(matrix(1, sum(cds), length(ribo), dimnames = list(rownames(counts)[cds], ribo)),
+              centre(lengths[cds, total]))
+  normalizationFactors(te) <- sweep(nf[, colnames(te)], 2, sf, "*")
   save(results(DESeq(te), name = te_coef, alpha = alpha), paste0("deltaTE_", norm), paste0("deltaTE_", norm))
 }
 
