@@ -191,8 +191,10 @@ independent filtering is tuned for hits at padj < 0.05 (`results(alpha = 0.05)`;
 deltaTE model, per
 transcript: log2FC and padj of TE (`deltaTE_yeastnorm`), RPF (`diffribo_yeastnorm`) and RNA
 (`difftotal_autonorm`; a transcript without a CDS has RNA only), the TPM of every library
-(ribokit's ritpm, salmon's TPM), log2TE per replicate, and the transcript annotation from the
-GTF. The experiments are stacked by target
+(ribokit's ritpm, salmon's TPM), log2TE per replicate, the transcript annotation from the
+GTF, and last log2FC and padj of TE and RPF with the Ribo-seq size factors estimated from the
+human reads instead of the spike-in (`*_TE_autonorm`, `*_RPF_autonorm`: `deltaTE_autonorm`,
+`diffribo_autonorm`). The experiments are stacked by target
 (the targets in `MASTER_TARGET_ORDER` in master.smk first, any other by name) and timepoint.
 
 `results/master/eif-master.filtered.csv`: the same table restricted, per experiment, to the

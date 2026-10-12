@@ -17,9 +17,11 @@ def master_experiments():
 
 
 def master_tables(exp):
-    """TE, RPF and RNA: the experiment's DESeq2 tables the master table takes."""
+    """TE, RPF and RNA, then TE and RPF with the Ribo-seq size factors from the human reads (autonorm): the
+    experiment's DESeq2 tables the master table takes."""
     return [f"{DELTATE_DIR}/{exp}/deseq_res_{k}.tsv"
-            for k in ("deltaTE_yeastnorm", "diffribo_yeastnorm", "difftotal_autonorm")]
+            for k in ("deltaTE_yeastnorm", "diffribo_yeastnorm", "difftotal_autonorm", "deltaTE_autonorm",
+                      "diffribo_autonorm")]
 
 
 def master_libraries(exp):

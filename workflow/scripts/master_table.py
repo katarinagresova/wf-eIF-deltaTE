@@ -5,13 +5,16 @@
   and salmon's TPM per RNA-seq library (after the RNA-seq library correction), as <read_type>_tpm_<condition>_rep<rep>;
 - the experiments stacked, with factor_time = the experiment name in lower case (eif4e_4h);
 - transcript annotation from the GTF's transcript lines;
-- log2TE_<condition>_rep<rep> = log2(ribo TPM / RNA TPM) where the ribo TPM exists and the RNA TPM is > 0.
+- log2TE_<condition>_rep<rep> = log2(ribo TPM / RNA TPM) where the ribo TPM exists and the RNA TPM is > 0;
+- last, log2FC/padj_{TE,RPF}_autonorm from deseq_res_{deltaTE,diffribo}_autonorm: the Ribo-seq size factors from the
+  human reads instead of the spike-in (appended, so the columns before keep their places).
 
 Usage: master_table.py <gtf> <out.csv> --conditions <reference> <treatment>
-                                       --experiment <name> <TE.tsv> <RPF.tsv> <RNA.tsv> ...
+                                       --experiment <name> <TE.tsv> <RPF.tsv> <RNA.tsv> <TE_autonorm.tsv>
+                                                    <RPF_autonorm.tsv> ...
                                        --library <experiment> <read_type> <condition> <rep> <quant> ...
---experiment: per experiment its deseq_res_{deltaTE_yeastnorm,diffribo_yeastnorm,difftotal_autonorm}.tsv, written
-in the order given. --library: per library samples.csv's read_type (ribo: ribokit's human quant; rna: salmon's
+--experiment: per experiment its deseq_res_{deltaTE_yeastnorm,diffribo_yeastnorm,difftotal_autonorm,
+deltaTE_autonorm,diffribo_autonorm}.tsv, written in the order given. --library: per library samples.csv's read_type (ribo: ribokit's human quant; rna: salmon's
 quant.sf), condition and rep. The library columns are sorted by condition (reference first), read_type, rep (ribo
 reference, RNA reference, ribo treatment, RNA treatment); log2TE pairs ribo and RNA by condition and rep, its columns
 sorted by rep, then condition.
@@ -32,8 +35,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument("gtf")
 parser.add_argument("out")
 parser.add_argument("--conditions", nargs=2, required=True, metavar=("REFERENCE", "TREATMENT"))
-parser.add_argument("--experiment", nargs=4, action="append", required=True,
-                    metavar=("NAME", "TE", "RPF", "RNA"))
+parser.add_argument("--experiment", nargs=6, action="append", required=True,
+                    metavar=("NAME", "TE", "RPF", "RNA", "TE_AUTONORM", "RPF_AUTONORM"))
+DE = ("TE", "RPF", "RNA")
+DE_AUTONORM = ("TE_autonorm", "RPF_autonorm")
+
+
+def read_de(path, x):
+    return pd.read_csv(path, sep="\t", usecols=["Name", "log2FoldChange", "padj"]).rename(
+        columns={"log2FoldChange": f"log2FC_{x}", "padj": f"padj_{x}"})
 parser.add_argument("--library", nargs=5, action="append", required=True,
                     metavar=("EXPERIMENT", "READ_TYPE", "CONDITION", "REP", "QUANT"))
 
@@ -50,10 +60,11 @@ def main():
         _, read_type, condition, rep, _ = lib
         return args.conditions.index(condition), read_type, int(rep)
 
-    dataframes = []
+    dataframes, autonorm = [], []
     for exp, *tables in args.experiment:
-        dfs_to_merge = [pd.read_csv(path, sep="\t", usecols=["Name", "log2FoldChange", "padj"]).rename(
-            columns={"log2FoldChange": f"log2FC_{x}", "padj": f"padj_{x}"}) for x, path in zip(("TE", "RPF", "RNA"), tables)]
+        dfs_to_merge = [read_de(path, x) for x, path in zip(DE, tables[:3])]
+        te_auto, rpf_auto = (read_de(path, x) for x, path in zip(DE_AUTONORM, tables[3:]))
+        autonorm.append(te_auto.merge(rpf_auto, on="Name", how="outer").assign(factor_time=exp.lower()))
         libraries = sorted((lib for lib in args.library if lib[0] == exp), key=library_key)
         columns = [f"{read_type}_tpm_{condition}_rep{rep}" for _, read_type, condition, rep, _ in libraries]
         if len(set(columns)) < len(columns):
@@ -82,6 +93,13 @@ def main():
             ribo_col, rna_col = f"ribo_tpm_{condition}_rep{rep}", f"rna_tpm_{condition}_rep{rep}"
             valid = master[ribo_col].notna() & (master[rna_col] > 0)
             master[f"log2TE_{condition}_rep{rep}"] = np.where(valid, np.log2(master[ribo_col] / master[rna_col]), np.nan)
+
+    # the autonorm models are fitted on the transcripts the yeastnorm ones are: no row of their own
+    n = len(master)
+    master = master.merge(pd.concat(autonorm, ignore_index=True), on=["Name", "factor_time"], how="left",
+                          validate="many_to_one")
+    if len(master) != n:
+        sys.exit("the autonorm tables added rows")
 
     master.to_csv(args.out)
     print(f"{len(master)} rows, {master.factor_time.nunique()} experiments -> {args.out}")
