@@ -11,7 +11,7 @@
 # the lengths row-centred, and the model gets size factor x row-centred length as normalization factors. The Ribo-seq
 # length is the CDS's, the same in every Ribo-seq library: it changes no fold change, only baseMean (the dispersion
 # trend, independent filtering). So the Ribo-seq libraries get plain size factors (diffribo_yeastnorm; the deltaTE
-# models), and the deltaTE models normalise each assay as its own model does (validation/ribo_nolength/).
+# models), and the deltaTE models normalise each assay as its own model does.
 # The Ribo-seq is counted on CDSs (a transcript without one is NA in its columns): the deltaTE and Ribo-seq models are
 # fitted on the transcripts with a CDS, the RNA-seq model and size factors on every transcript.
 # results() tunes its independent filtering to alpha = 0.05, the padj cutoff of a hit (DESeq2's default: 0.1).

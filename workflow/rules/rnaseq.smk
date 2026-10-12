@@ -108,11 +108,11 @@ rule cutadapt_rna:
     threads: 4
     shell:
         # -O 3 (cutadapt's default), not -O 6 as wf-riboseq-align's
-        # cutadapt_reads: an eIF3d read with 3-5 nt of adapter left in loses
-        # its pair in salmon (with -O 6 a notch at 96-100 nt in the fragment
-        # length distribution, validation/rna_change/fig3_fld.png); a chance
-        # 3-5 nt match only shortens a read. -O and the quality cutoff apply
-        # to both mates.
+        # cutadapt_reads: salmon counts an eIF3d pair with 3-5 nt of adapter
+        # left in as a dovetail but leaves it out of the fragment length
+        # distribution, and so of the effective lengths (with -O 6 a notch at
+        # 96-100 nt); a chance 3-5 nt match only shortens a read. -O and the
+        # quality cutoff apply to both mates.
         "cutadapt --cores {threads} -a {params.adapter} -A {params.adapter} -O 3 "
         "--minimum-length {params.minlength} --quality-cutoff {params.qualcutoff} "
         "-o {output.fastq1} -p {output.fastq2} "

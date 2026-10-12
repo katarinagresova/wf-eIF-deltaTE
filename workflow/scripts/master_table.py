@@ -14,10 +14,10 @@ Usage: master_table.py <gtf> <out.csv> --conditions <reference> <treatment>
                                                     <RPF_autonorm.tsv> ...
                                        --library <experiment> <read_type> <condition> <rep> <quant> ...
 --experiment: per experiment its deseq_res_{deltaTE_yeastnorm,diffribo_yeastnorm,difftotal_autonorm,
-deltaTE_autonorm,diffribo_autonorm}.tsv, written in the order given. --library: per library samples.csv's read_type (ribo: ribokit's human quant; rna: salmon's
-quant.sf), condition and rep. The library columns are sorted by condition (reference first), read_type, rep (ribo
-reference, RNA reference, ribo treatment, RNA treatment); log2TE pairs ribo and RNA by condition and rep, its columns
-sorted by rep, then condition.
+deltaTE_autonorm,diffribo_autonorm}.tsv, written in the order given. --library: per library samples.csv's read_type
+(ribo: ribokit's human quant; rna: salmon's quant.sf), condition and rep. The library columns are sorted by condition
+(reference first), read_type, rep (ribo reference, RNA reference, ribo treatment, RNA treatment); log2TE pairs ribo and
+RNA by condition and rep, its columns sorted by rep, then condition.
 """
 import argparse
 import re
@@ -30,13 +30,6 @@ TPM_COLUMN = {"ribo": "ritpm", "rna": "TPM"}
 ANNOTATION = ["transcript_id", "GENCODE_transcript_id", "gene_id", "gene_name", "structural_category",
               "transcript_biotype", "transcript_name"]
 ATTR_RE = re.compile(r'(\w+) "([^"]*)"')
-
-parser = argparse.ArgumentParser()
-parser.add_argument("gtf")
-parser.add_argument("out")
-parser.add_argument("--conditions", nargs=2, required=True, metavar=("REFERENCE", "TREATMENT"))
-parser.add_argument("--experiment", nargs=6, action="append", required=True,
-                    metavar=("NAME", "TE", "RPF", "RNA", "TE_AUTONORM", "RPF_AUTONORM"))
 DE = ("TE", "RPF", "RNA")
 DE_AUTONORM = ("TE_autonorm", "RPF_autonorm")
 
@@ -44,6 +37,14 @@ DE_AUTONORM = ("TE_autonorm", "RPF_autonorm")
 def read_de(path, x):
     return pd.read_csv(path, sep="\t", usecols=["Name", "log2FoldChange", "padj"]).rename(
         columns={"log2FoldChange": f"log2FC_{x}", "padj": f"padj_{x}"})
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("gtf")
+parser.add_argument("out")
+parser.add_argument("--conditions", nargs=2, required=True, metavar=("REFERENCE", "TREATMENT"))
+parser.add_argument("--experiment", nargs=6, action="append", required=True,
+                    metavar=("NAME", "TE", "RPF", "RNA", "TE_AUTONORM", "RPF_AUTONORM"))
 parser.add_argument("--library", nargs=5, action="append", required=True,
                     metavar=("EXPERIMENT", "READ_TYPE", "CONDITION", "REP", "QUANT"))
 

@@ -6,11 +6,10 @@
 # representative (scripts/collapse_transcriptome.py says the tie-break).
 # Transcripts with no CDS at all are grouped by gene_id alone. Then same-gene
 # CDS near-duplicates (>=99% covered) merge, and every gene keeps one
-# transcript (validation/one_per_gene/: the `hybrid` arm). Before all that,
-# GENCODE's readthrough genes go; after it, CDSs with few k-mers of their own
-# merge across genes (paralogs). Both made replicate Ribo-seq counts unstable:
-# the reads are shared, so the EM's split jumps between replicates
-# (validation/reference_fix/). See results/resources/collapse_report.tsv for
+# transcript. Before all that, GENCODE's readthrough genes go; after it, CDSs
+# with few k-mers of their own merge across genes (paralogs). Both made
+# replicate Ribo-seq counts unstable: the reads are shared, so the EM's split
+# jumps between replicates. See results/resources/collapse_report.tsv for
 # every group resolved.
 
 _COLLAPSE_CONFIG = config["collapse_transcriptome"]
