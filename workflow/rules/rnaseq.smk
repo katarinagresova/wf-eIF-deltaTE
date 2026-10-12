@@ -107,11 +107,13 @@ rule cutadapt_rna:
         "../envs/cutadapt.yaml"
     threads: 4
     shell:
-        # -O 6 (as wf-riboseq-align's cutadapt_reads): default -O 3 lets a 3 nt
-        # chance match to the adapter trim real insert bases off the 3' end;
-        # -O 6 is long enough to be a real adapter. -O and the quality cutoff
-        # apply to both mates.
-        "cutadapt --cores {threads} -a {params.adapter} -A {params.adapter} -O 6 "
+        # -O 3 (cutadapt's default), not -O 6 as wf-riboseq-align's
+        # cutadapt_reads: an eIF3d read with 3-5 nt of adapter left in loses
+        # its pair in salmon (with -O 6 a notch at 96-100 nt in the fragment
+        # length distribution, validation/rna_change/fig3_fld.png); a chance
+        # 3-5 nt match only shortens a read. -O and the quality cutoff apply
+        # to both mates.
+        "cutadapt --cores {threads} -a {params.adapter} -A {params.adapter} -O 3 "
         "--minimum-length {params.minlength} --quality-cutoff {params.qualcutoff} "
         "-o {output.fastq1} -p {output.fastq2} "
         "{input.fastq1} {input.fastq2} > {log} 2>&1"

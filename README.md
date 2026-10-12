@@ -116,7 +116,7 @@ once, in `results/align/`.
 `workflow/rules/rnaseq.smk`, per experiment:
 - cutadapt trims the 3' end of both mates: bases below quality `qualcutoff` (20), then the
   adapter (config `rnaseq_trim`: `adapter`, the start of both TruSeq adapters; a match of at
-  least 6 nt); a pair with a mate shorter than `minlength` (35) is dropped.
+  least 3 nt); a pair with a mate shorter than `minlength` (35) is dropped.
 - salmon 1.10.2 quantifies each paired-end library on its trimmed fastq files, by selective alignment
   (`-l A --seqBias --gcBias`), against an index of the collapsed transcriptome with every
   sequence of the genome (config

@@ -59,7 +59,7 @@ align:
 # RNA-seq adapter trimming (workflow/rules/rnaseq.smk, cutadapt_rna), before
 # salmon: the 3' ends of both mates are quality-trimmed (`qualcutoff`, as the
 # Ribo-seq's) and `adapter` is cut (AGATCGGAAGAGC: the start of both TruSeq
-# adapters; >= 6 nt of it); a pair with a mate shorter than `minlength` after
+# adapters; >= 3 nt of it); a pair with a mate shorter than `minlength` after
 # trimming is dropped (35: the shortest read in the fastqs that came trimmed).
 rnaseq_trim:
   adapter: "AGATCGGAAGAGC"
