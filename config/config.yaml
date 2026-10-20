@@ -96,8 +96,9 @@ references:
 
 # Ribo-seq read lengths counted, [lo, hi] nt, the same window in every library:
 # a window chosen per library can drop a length class at its edge in some
-# libraries only, and the spike-in size factors move with it.
-read_lengths: [18, 30]
+# libraries only, and the spike-in size factors move with it. 24-30 nt, agreed
+# with the collaborators after looking at the data (2026-10-20).
+read_lengths: [24, 30]
 
 # RNA-seq library correction (workflow/rules/rna_correction.smk). Within each
 # condition, each library's log2 CPM deviation from the mean of its replicates
