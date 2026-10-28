@@ -158,8 +158,9 @@ the reads on the human transcripts and counts the reads per CDS, human and spike
 human offsets). Only reads of config `read_lengths` count, the same window in every library.
 Reads compatible with several CDSs are split by an EM that starts deterministically and fails if
 it does not converge. `results/ribokit/<experiment>/` holds
-`<sample>.{human,yeast}.{quant,offsets,ties,stats,psites}.tsv` (`psites.tsv`: one row per
-alignment assigned to a CDS, its P-site position). ribokit is installed from GitHub at the
+`<sample>.{human,yeast}.{quant,offsets,ties,stats,psites,qc}.tsv` (`psites.tsv`: one row per
+alignment assigned to a CDS, its P-site position; `qc.tsv`: every read once, per read length,
+P-site region and 5' end phase in the CDS, for QC plots). ribokit is installed from GitHub at the
 commit pinned in `workflow/envs/ribokit.yaml`.
 
 ## deltaTE: DESeq2
@@ -215,6 +216,8 @@ histone mRNAs). Filtered after DESeq2, so padj is the full table's.
   goes into the master table; one without (e.g. a harringtonine experiment with `plusAux`
   libraries only) is aligned and quantified only: up to the RNA-seq library correction and
   ribokit.
+- An experiment without RNA-seq libraries (Ribo-seq only) gets no RNA-seq outputs; with no
+  expression filter, ribokit counts it on the whole collapsed GTF.
 
 ## Setup
 
@@ -243,6 +246,11 @@ histone mRNAs). Filtered after DESeq2, so padj is the full table's.
   `./snakemake.sh results/align/reference/contaminants_built.fa`.
 - `align_snakefile: <checkout>/workflow/Snakefile` imports a local wf-riboseq-align checkout
   instead of the pinned commit.
+- Another dataset, with its own sample sheet and results: a config with the keys that differ
+  (`samples`, `RESULTS_DIR`, `LOG_DIR`, e.g. `results_<dataset>` / `logs_<dataset>`, and e.g.
+  `align: adapter`, `randomer_5p`, `randomer_3p` for another library kit), passed in `RUN_CONFIG`:
+  the drivers layer it after `config/local/config.yaml`, e.g.
+  `RUN_CONFIG=config/local/R002/config.yaml ./snakemake.sh -n`.
 
 ## Running
 

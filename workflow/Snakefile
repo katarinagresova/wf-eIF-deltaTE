@@ -33,6 +33,11 @@ def samples_of(exp, read_type):
     return list(SAMPLES.loc[(SAMPLES["experiment"] == exp) & (SAMPLES["read_type"] == read_type), "sample_id"])
 
 
+# the experiments run with RNA-seq; the others (Ribo-seq only) get no RNA-seq
+# outputs, and ribokit counts them on the whole collapsed GTF
+RNA_EXPERIMENTS = [exp for exp in EXPERIMENT_NAMES if samples_of(exp, "rna")]
+
+
 # align.smk's per-experiment outputs: split BAMs, qc
 ALIGN_DIR = f"{RESULTS_DIR}/align/{{exp}}"
 
@@ -56,11 +61,11 @@ rule all:
         [f for f in rules.align_all.input
          if os.path.relpath(f, f"{RESULTS_DIR}/align").split("/")[0] in EXPERIMENT_NAMES],
         # the RNA-seq QC (salmon, FastQC)
-        [f"{RNASEQ_DIR}/{exp}/multiqc/multiqc_report.html" for exp in EXPERIMENT_NAMES],
+        [f"{RNASEQ_DIR}/{exp}/multiqc/multiqc_report.html" for exp in RNA_EXPERIMENTS],
         # the human Ribo-seq BAMs minus the RNA-seq blacklist, for tools other than this workflow's
-        [RNASEQ_RIBO_BAM.format(exp=exp, sample=s) for exp in EXPERIMENT_NAMES for s in samples_of(exp, "ribo")],
+        [RNASEQ_RIBO_BAM.format(exp=exp, sample=s) for exp in RNA_EXPERIMENTS for s in samples_of(exp, "ribo")],
         # the corrected RNA-seq quantifications + what the correction did
-        [f"{RNA_CORRECTION_DIR}/{exp}/factors.tsv" for exp in EXPERIMENT_NAMES],
+        [f"{RNA_CORRECTION_DIR}/{exp}/factors.tsv" for exp in RNA_EXPERIMENTS],
         # the Ribo-seq quantifications
         [f"{RIBOKIT_DIR}/{exp}/{s}.{species}.quant.tsv"
          for exp in EXPERIMENT_NAMES for s in samples_of(exp, "ribo") for species in ("human", "yeast")],
@@ -70,6 +75,6 @@ rule all:
          for exp in DELTATE_EXPERIMENTS
          for kind in ("deltaTE_yeastnorm", "deltaTE_autonorm", "diffribo_yeastnorm", "diffribo_autonorm",
                       "difftotal_autonorm")],
-        # the master table, full and filtered
-        f"{RESULTS_DIR}/master/eif-master.csv",
-        f"{RESULTS_DIR}/master/eif-master.filtered.csv",
+        # the master table, full and filtered (if any experiment has deltaTE)
+        [f"{RESULTS_DIR}/master/eif-master.csv", f"{RESULTS_DIR}/master/eif-master.filtered.csv"]
+        if DELTATE_EXPERIMENTS else [],

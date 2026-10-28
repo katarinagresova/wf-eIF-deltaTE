@@ -22,8 +22,10 @@ logs/
 # Machine-specific paths (config/local/config.yaml, see README.md)
 config/local/
 
-# Project outputs
+# Project outputs (results_<dataset>/, logs_<dataset>/: another dataset's run, config/local/<dataset>/)
 results/
+results_*/
+logs_*/
 validation/
 resources/
 

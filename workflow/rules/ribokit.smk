@@ -2,9 +2,10 @@
 # Ribo-seq library: P-site offsets from the reads on the human transcripts,
 # then reads per human CDS, and per spike-in (yeast) CDS with the human
 # offsets. Inputs: align.smk's split human / spike-in BAMs, the experiment's
-# RNA-seq-filtered GTF (rnaseq.smk), and the genome fastas and spike-in GTF of
-# config references:. Only reads of config read_lengths count, the same window
-# in every library. In results/ribokit/<exp>/, per library and species (human,
+# RNA-seq-filtered GTF (rnaseq.smk; an experiment without RNA-seq: the whole
+# collapsed GTF), and the genome fastas and spike-in GTF of config
+# references:. Only reads of config read_lengths count, the same window in
+# every library. In results/ribokit/<exp>/, per library and species (human,
 # yeast):
 #   <sample>.<species>.quant.tsv     reads and ritpm per CDS (Name Length
 #                                    EffectiveLength ritpm NumReads)
@@ -15,6 +16,8 @@
 #   <sample>.<species>.psites.tsv    read, Name (CDS), psite (0-based transcript position of the
 #                                    P-site's first nt), length -- one row per alignment assigned
 #                                    to a CDS
+#   <sample>.<species>.qc.tsv        reads per read length, P-site region (leader, CDS, trailer) and
+#                                    5' end phase in the CDS, every read once (for QC plots)
 # Later steps read the quants (RIBOKIT_QUANT). ribokit fails by itself if its
 # fit does not converge.
 
@@ -35,17 +38,23 @@ RIBOKIT_LOG = f"{LOG_DIR}/ribokit/{{exp}}/{{sample}}"
 RIBOKIT_CMD = f"ribokit quant --read-lengths {_rl[0]}-{_rl[1]} "
 
 
+def ribokit_human_gtf(wc):
+    """The experiment's RNA-seq-filtered GTF; without RNA-seq there is no filter: the collapsed GTF."""
+    return RNASEQ_GTF.format(exp=wc.exp) if wc.exp in RNA_EXPERIMENTS else COLLAPSED_GTF
+
+
 rule ribokit_human_morfs:
     input:
         bam=f"{ALIGN_DIR}/split_bam/transcriptome/human/{{sample}}.bam",
         fasta=config["references"]["human_genome_fa"],
-        gtf=RNASEQ_GTF,
+        gtf=ribokit_human_gtf,
     output:
         quant=f"{RIBOKIT_OUT}.human.quant.tsv",
         offsets=f"{RIBOKIT_OUT}.human.offsets.tsv",
         ties=f"{RIBOKIT_OUT}.human.ties.tsv",
         stats=f"{RIBOKIT_OUT}.human.stats.tsv",
         psites=f"{RIBOKIT_OUT}.human.psites.tsv",
+        qc=f"{RIBOKIT_OUT}.human.qc.tsv",
     wildcard_constraints:
         **RIBOKIT_CONSTRAINTS,
     params:
@@ -71,6 +80,7 @@ rule ribokit_yeast_morfs:
         ties=f"{RIBOKIT_OUT}.yeast.ties.tsv",
         stats=f"{RIBOKIT_OUT}.yeast.stats.tsv",
         psites=f"{RIBOKIT_OUT}.yeast.psites.tsv",
+        qc=f"{RIBOKIT_OUT}.yeast.qc.tsv",
     wildcard_constraints:
         **RIBOKIT_CONSTRAINTS,
     params:

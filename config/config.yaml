@@ -51,6 +51,11 @@ align:
   minlength: 18
   maxlength: 100
   qualcutoff: 20
+  # the random nt at the 5' end / before the adapter (NEXTflex: 4 + 4). Set
+  # here although the module's schema defaults them: snakemake fills schema
+  # defaults in the driver only, not in a SLURM job (KeyError there)
+  randomer_5p: 4
+  randomer_3p: 4
   # human_transcriptome_fa: not set here -- collapse_transcriptome.smk builds
   # it from collapse_transcriptome: above, passed in by align.smk
   spike_in_transcriptome_fa: "/path/to/yeast_transcriptome.fa"

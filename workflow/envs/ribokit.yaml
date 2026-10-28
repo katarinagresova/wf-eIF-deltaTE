@@ -13,4 +13,4 @@ dependencies:
   - pysam=0.24.1
   - pip=26.2.1
   - pip:
-      - ribokit @ https://github.com/katarinagresova/ribokit/archive/71f4a76d50c386a08d34a833e359550dc1ef63df.tar.gz
+      - ribokit @ https://github.com/katarinagresova/ribokit/archive/ebe1cf93639f94c585dd07314d39e3c2b3768cb3.tar.gz
