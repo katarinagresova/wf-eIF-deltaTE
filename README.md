@@ -30,7 +30,7 @@ flowchart TD
     master["<b>Master table</b><br>master_table,<br>master_table_filtered"]
 
     deseq(["deltaTE/{experiment}/<br>deseq_res_*.tsv"])
-    mastercsv(["master/eif-master.csv,<br>eif-master.filtered.csv"])
+    mastercsv(["master/eif-master.{norm}.csv,<br>eif-master.{norm}.filtered.csv"])
 
     %% Longer arrows (more dashes) keep every input on the top row.
     raw_tx --> collapse
@@ -188,17 +188,16 @@ independent filtering is tuned for hits at padj < 0.05 (`results(alpha = 0.05)`;
 
 ## Master table
 
-`workflow/rules/master.smk` -> `results/master/eif-master.csv`: all experiments run with a
-deltaTE model, per
-transcript: log2FC and padj of TE (`deltaTE_yeastnorm`), RPF (`diffribo_yeastnorm`) and RNA
-(`difftotal_autonorm`; a transcript without a CDS has RNA only), the TPM of every library
-(ribokit's ritpm, salmon's TPM), log2TE per replicate, the transcript annotation from the
-GTF, and last log2FC and padj of TE and RPF with the Ribo-seq size factors estimated from the
-human reads instead of the spike-in (`*_TE_autonorm`, `*_RPF_autonorm`: `deltaTE_autonorm`,
-`diffribo_autonorm`). The experiments are stacked by target
+`workflow/rules/master.smk` -> `results/master/eif-master.{norm}.csv`, one table per Ribo-seq
+normalisation, `yeastnorm` (spike-in) and `autonorm` (estimated within the libraries): all
+experiments run with a deltaTE model, per transcript: log2FC and padj of TE
+(`deltaTE_{norm}`), RPF (`diffribo_{norm}`) and RNA (`difftotal_autonorm` in both; a
+transcript without a CDS has RNA only), the TPM of every library (ribokit's ritpm, salmon's
+TPM), log2TE per replicate and the transcript annotation from the GTF. The two tables have the
+same rows and columns; only the TE and RPF columns differ. The experiments are stacked by target
 (the targets in `MASTER_TARGET_ORDER` in master.smk first, any other by name) and timepoint.
 
-`results/master/eif-master.filtered.csv`: the same table restricted, per experiment, to the
+`results/master/eif-master.{norm}.filtered.csv`: the same table restricted, per experiment, to the
 transcripts with Ribo-seq ritpm >= 5 and RNA-seq TPM >= 1 in every library of the reference
 condition (config `master_filter`). The Ribo-seq floor is the paper's row filter; the RNA-seq
 floor drops transcripts whose TE is meaningless because the RNA-seq barely sees them (mostly

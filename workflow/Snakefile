@@ -75,6 +75,6 @@ rule all:
          for exp in DELTATE_EXPERIMENTS
          for kind in ("deltaTE_yeastnorm", "deltaTE_autonorm", "diffribo_yeastnorm", "diffribo_autonorm",
                       "difftotal_autonorm")],
-        # the master table, full and filtered (if any experiment has deltaTE)
-        [f"{RESULTS_DIR}/master/eif-master.csv", f"{RESULTS_DIR}/master/eif-master.filtered.csv"]
+        # the master tables, yeastnorm and autonorm, full and filtered (if any experiment has deltaTE)
+        [f"{RESULTS_DIR}/master/eif-master.{norm}{f}.csv" for norm in MASTER_NORMS for f in ("", ".filtered")]
         if DELTATE_EXPERIMENTS else [],

@@ -1,7 +1,10 @@
 # The eIF master table (workflow/scripts/master_table.py), the table the
 # paper reads through wf-transmod-data (its HCT116_ISOFORMS_TE: logTE), from
 # the deltaTE results and quants of every experiment run with a deltaTE model
-# (DELTATE_EXPERIMENTS, deltate.smk).
+# (DELTATE_EXPERIMENTS, deltate.smk). One table per Ribo-seq normalisation
+# (deltate.smk's <norm>): TE and RPF from deltaTE_<norm> and diffribo_<norm>;
+# RNA from difftotal_autonorm in both (the RNA-seq has no spike-in).
+MASTER_NORMS = ["yeastnorm", "autonorm"]
 
 # The experiments' order: these targets first, in this order, any other target
 # after them by name; within a target by timepoint
@@ -16,12 +19,10 @@ def master_experiments():
     return sorted(DELTATE_EXPERIMENTS, key=key)
 
 
-def master_tables(exp):
-    """TE, RPF and RNA, then TE and RPF with the Ribo-seq size factors from the human reads (autonorm): the
-    experiment's DESeq2 tables the master table takes."""
+def master_tables(exp, norm):
+    """TE, RPF and RNA: the experiment's DESeq2 tables the <norm> master table takes."""
     return [f"{DELTATE_DIR}/{exp}/deseq_res_{k}.tsv"
-            for k in ("deltaTE_yeastnorm", "diffribo_yeastnorm", "difftotal_autonorm", "deltaTE_autonorm",
-                      "diffribo_autonorm")]
+            for k in (f"deltaTE_{norm}", f"diffribo_{norm}", "difftotal_autonorm")]
 
 
 def master_libraries(exp):
@@ -33,19 +34,22 @@ def master_libraries(exp):
 
 rule master_table:
     input:
-        tables=[t for e in master_experiments() for t in master_tables(e)],
+        tables=lambda w: [t for e in master_experiments() for t in master_tables(e, w.norm)],
         quants=[lib[3] for e in master_experiments() for lib in master_libraries(e)],
         gtf=COLLAPSED_GTF,
         script=workflow.source_path("../scripts/master_table.py"),
     output:
-        f"{RESULTS_DIR}/master/eif-master.csv",
+        f"{RESULTS_DIR}/master/eif-master.{{norm}}.csv",
+    wildcard_constraints:
+        norm="|".join(MASTER_NORMS),
     params:
-        args=" ".join(["--conditions", *DELTATE_CONDITIONS]
-                      + [x for e in master_experiments() for x in ["--experiment", e, *master_tables(e)]]
-                      + [x for e in master_experiments() for lib in master_libraries(e)
-                         for x in ("--library", e, *lib)]),
+        args=lambda w: " ".join(["--conditions", *DELTATE_CONDITIONS]
+                                + [x for e in master_experiments()
+                                   for x in ["--experiment", e, *master_tables(e, w.norm)]]
+                                + [x for e in master_experiments() for lib in master_libraries(e)
+                                   for x in ("--library", e, *lib)]),
     log:
-        f"{LOG_DIR}/master.log",
+        f"{LOG_DIR}/master_{{norm}}.log",
     conda:
         "../envs/python.yaml"
     shell:
@@ -61,12 +65,14 @@ rule master_table_filtered:
         master=rules.master_table.output[0],
         script=workflow.source_path("../scripts/filter_master.py"),
     output:
-        f"{RESULTS_DIR}/master/eif-master.filtered.csv",
+        f"{RESULTS_DIR}/master/eif-master.{{norm}}.filtered.csv",
+    wildcard_constraints:
+        norm="|".join(MASTER_NORMS),
     params:
         args=" ".join(map(str, [DELTATE_CONDITIONS[0], config["master_filter"]["min_ribo_tpm"],
                                 config["master_filter"]["min_rna_tpm"]])),
     log:
-        f"{LOG_DIR}/master_filtered.log",
+        f"{LOG_DIR}/master_{{norm}}_filtered.log",
     conda:
         "../envs/python.yaml"
     shell:
