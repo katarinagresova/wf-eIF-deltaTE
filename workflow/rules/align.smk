@@ -19,7 +19,7 @@ _CONTAMINANTS = github(ALIGN_REPO, path="resources/contaminants_built.fa", commi
 
 ALIGN_CONFIG = {
     "contaminants_fa": sourcecache_entry(workflow.sourcecache.get_path(_CONTAMINANTS),
-                                         _CONTAMINANTS.get_path_or_uri()),
+                                         _CONTAMINANTS.get_path_or_uri(secret_free=True)),
     **config["align"],
     # our own CDS-based collapse (collapse_transcriptome.smk), not config's
     "human_transcriptome_fa": COLLAPSED_FA,
