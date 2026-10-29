@@ -101,4 +101,4 @@ rule deltate_deseq2:
     conda:
         "../envs/deseq2.yaml"
     shell:
-        "Rscript {input.script} {params.dir} {params.conditions} > {log} 2>&1"
+        "Rscript --no-environ {input.script} {params.dir} {params.conditions} > {log} 2>&1"
