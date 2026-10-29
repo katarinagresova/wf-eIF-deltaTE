@@ -2,8 +2,8 @@
 # wf-riboseq-align, imported once for all of them (rules/align.smk), the
 # RNA-seq quantified and the expression filter (rules/rnaseq.smk), with the
 # RNA-seq library correction (rules/rna_correction.smk), the Ribo-seq
-# quantification (rules/ribokit.smk), the deltaTE model (rules/deltate.smk)
-# and the master table (rules/master.smk).
+# quantification (rules/ribokit.smk) and its QC panel (rules/rpf_qc.smk), the
+# deltaTE model (rules/deltate.smk) and the master table (rules/master.smk).
 
 import os
 import re
@@ -47,6 +47,7 @@ include: "rules/align.smk"
 include: "rules/rnaseq.smk"
 include: "rules/rna_correction.smk"
 include: "rules/ribokit.smk"
+include: "rules/rpf_qc.smk"
 include: "rules/deltate.smk"
 include: "rules/master.smk"
 
@@ -69,6 +70,8 @@ rule all:
         # the Ribo-seq quantifications
         [f"{RIBOKIT_DIR}/{exp}/{s}.{species}.quant.tsv"
          for exp in EXPERIMENT_NAMES for s in samples_of(exp, "ribo") for species in ("human", "yeast")],
+        # the Ribo-seq QC panel per experiment
+        [f"{RPF_QC_DIR}/{exp}/{exp}_rpf_qc.pdf" for exp in EXPERIMENT_NAMES],
         # the deltaTE model + DESeq2 per assay: the experiments with both
         # conditions in both assays only (deltate.smk)
         [f"{DELTATE_DIR}/{exp}/deseq_res_{kind}.tsv"
